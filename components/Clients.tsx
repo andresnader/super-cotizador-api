@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Client, Quote } from '../types';
-import { getClients, saveClients, downloadFile, parseCSV, getQuotes, saveQuotes } from '../services/storage';
+import { getClients, saveClients, getQuotes, saveQuotes } from '../services/storage';
 import Modal from './Modal';
 
 interface ClientsProps {
@@ -18,10 +18,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
 
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
-
-    // Import State
-    const [importFile, setImportFile] = useState<File | null>(null);
-    const [importStatus, setImportStatus] = useState<{msg: string, type: 'success' | 'error' | 'info'} | null>(null);
 
     // Quote Management State
     const [selectedClientForQuotes, setSelectedClientForQuotes] = useState<Client | null>(null);
@@ -106,77 +102,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         const updatedAll = allQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q);
         saveQuotes(updatedAll);
         setClientQuotes(clientQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q));
-    };
-
-    // CSV Import Logic
-    const downloadTemplate = () => {
-        const headers = "Identificación No.,Razón Social,Nombre Comercial,Dirección,Teléfono,Email";
-        downloadFile("Plantilla_Clientes.csv", headers + "\n");
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setImportFile(file);
-            setImportStatus({ msg: `Archivo seleccionado: ${file.name}`, type: 'info' });
-        }
-    };
-
-    const handleImport = () => {
-        if (!importFile) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const text = e.target?.result as string;
-                const { data } = parseCSV(text);
-                
-                if (data.length === 0) {
-                    setImportStatus({ msg: "No se encontraron datos válidos.", type: 'error' });
-                    return;
-                }
-
-                const mappings = {
-                    'identificacionno': 'ruc',
-                    'razonsocial': 'name',
-                    'nombrecomercial': 'code',
-                    'direccion': 'address',
-                    'telefono': 'phone',
-                    'email': 'contact',
-                };
-
-                let addedCount = 0;
-                let updatedCount = 0;
-                const newClients = [...clients];
-
-                data.forEach((row: any) => {
-                    const clientData: any = {};
-                    Object.entries(mappings).forEach(([csvKey, appKey]) => {
-                        clientData[appKey] = row[csvKey] || '';
-                    });
-
-                    if (!clientData.name) return;
-                    if (!clientData.code) clientData.code = clientData.name.substring(0, 10).toUpperCase();
-
-                    const existingIdx = newClients.findIndex(c => c.ruc === clientData.ruc);
-                    if (existingIdx >= 0 && clientData.ruc) {
-                        newClients[existingIdx] = { ...newClients[existingIdx], ...clientData };
-                        updatedCount++;
-                    } else {
-                        clientData.id = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                        newClients.push(clientData as Client);
-                        addedCount++;
-                    }
-                });
-
-                setClients(newClients);
-                saveClients(newClients);
-                setImportStatus({ msg: `Importación exitosa: ${addedCount} nuevos, ${updatedCount} actualizados.`, type: 'success' });
-                setImportFile(null);
-            } catch (err) {
-                setImportStatus({ msg: "Error al procesar el archivo CSV.", type: 'error' });
-            }
-        };
-        reader.readAsText(importFile);
     };
 
     const ClientForm = () => (
@@ -295,27 +220,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                         </div>
                     ))
                 )}
-            </div>
-
-            {/* CSV Import Section */}
-            <div className="mt-12 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-bold uppercase text-gray-500 mb-4 tracking-wider">Importar Clientes (CSV)</h3>
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-                    <div className="flex flex-col md:flex-row gap-4 items-center">
-                         <button onClick={downloadTemplate} className="w-full md:w-auto bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium shadow-sm transition">
-                            <i className="fas fa-download mr-2 text-blue-500"></i> Plantilla
-                        </button>
-                        <input type="file" accept=".csv" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-white file:text-indigo-700 border border-gray-200 rounded-lg cursor-pointer" />
-                         <button onClick={handleImport} disabled={!importFile} className="w-full md:w-auto bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md transition">
-                            Cargar
-                        </button>
-                    </div>
-                    {importStatus && (
-                        <div className={`mt-4 p-3 rounded-lg text-sm border ${importStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
-                            {importStatus.msg}
-                        </div>
-                    )}
-                </div>
             </div>
 
             {/* Modal de Historial de Cotizaciones */}

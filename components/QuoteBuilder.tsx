@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Client, Service, QuoteItem, Quote, CompanySettings } from '../types';
 import { getClients, getServices, getQuoteCounter, incrementQuoteCounter, saveQuotes, getQuotes } from '../services/storage';
 import Modal from './Modal';
@@ -24,9 +24,18 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
   const [previewService, setPreviewService] = useState<Partial<Service>>({});
   const [customDetail, setCustomDetail] = useState('');
 
+  // Search States
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+
   // Modals
   const [showClientModal, setShowClientModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+
+  // Validation State
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     setClients(getClients());
@@ -39,19 +48,58 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
     setServices(getServices());
   };
 
-  const handleServiceSelect = (id: string) => {
-    setSelectedServiceId(id);
-    const s = services.find(srv => srv.id === id);
-    if (s) {
-      setPreviewService({ ...s });
-    } else {
-      setPreviewService({});
-    }
-    setCustomDetail('');
+  // --- Client Search Logic ---
+  const handleClientSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setClientSearch(val);
+    setSelectedClient(''); // Clear selection while typing
+    setShowClientDropdown(true);
+    setValidationError(null);
   };
 
+  const selectClient = (client: Client) => {
+    setSelectedClient(client.id);
+    setClientSearch(client.name);
+    setShowClientDropdown(false);
+    setValidationError(null);
+  };
+
+  const filteredClients = clients.filter(c => 
+    c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    c.ruc.includes(clientSearch) ||
+    c.code.toLowerCase().includes(clientSearch.toLowerCase())
+  );
+
+  // --- Service Search Logic ---
+  const handleServiceSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setServiceSearch(val);
+    setSelectedServiceId('');
+    setPreviewService({});
+    setCustomDetail('');
+    setShowServiceDropdown(true);
+  };
+
+  const selectService = (service: Service) => {
+    setSelectedServiceId(service.id);
+    setPreviewService({ ...service });
+    setServiceSearch(service.name);
+    setCustomDetail('');
+    setShowServiceDropdown(false);
+  };
+
+  const filteredServices = services.filter(s => 
+    s.name.toLowerCase().includes(serviceSearch.toLowerCase()) ||
+    s.code.toLowerCase().includes(serviceSearch.toLowerCase()) ||
+    (s.category && s.category.toLowerCase().includes(serviceSearch.toLowerCase())) ||
+    s.price.toString().includes(serviceSearch)
+  );
+
   const addService = () => {
-    if (!selectedServiceId && !previewService.price) return;
+    // If no ID selected, check if we have a price manually entered (Custom Service)
+    if (!selectedServiceId && !previewService.price) {
+        if (!serviceSearch) return; // Need at least a name
+    }
     
     // Find master service to get category/cost defaults if available
     const master = services.find(s => s.id === selectedServiceId);
@@ -59,10 +107,14 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
     const baseDesc = previewService.description || '';
     const finalDesc = customDetail ? `${baseDesc}\n\nDETALLE ADICIONAL: ${customDetail}` : baseDesc;
 
+    // Use serviceSearch as name if it's a custom service (no ID selected)
+    const name = master ? master.name : (serviceSearch || 'Servicio Personalizado');
+    const code = master ? master.code : 'CUSTOM';
+
     const newItem: QuoteItem = {
       id: selectedServiceId || `custom_${Date.now()}`,
-      name: previewService.name || 'Servicio Personalizado',
-      code: previewService.code || 'CUSTOM',
+      name: name,
+      code: code,
       description: finalDesc,
       price: previewService.price || 0,
       quantity: 1,
@@ -71,11 +123,13 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
     };
 
     setQuoteItems([...quoteItems, newItem]);
+    setValidationError(null);
     
     // Reset selection
     setSelectedServiceId('');
     setPreviewService({});
     setCustomDetail('');
+    setServiceSearch('');
   };
 
   const removeService = (index: number) => {
@@ -100,12 +154,14 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
   const { subtotal, iva, total } = calculateTotals();
 
   const handleSaveAndPrint = () => {
+    setValidationError(null);
+
     if (!selectedClient) {
-      alert("Seleccione un cliente");
+      setValidationError("Por favor, seleccione un cliente válido antes de continuar.");
       return;
     }
     if (quoteItems.length === 0) {
-      alert("Agregue al menos un ítem");
+      setValidationError("La cotización está vacía. Agregue al menos un servicio.");
       return;
     }
 
@@ -139,11 +195,17 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
     // Reset form
     setQuoteItems([]);
     setQuoteNotes('');
+    setClientSearch('');
+    setSelectedClient('');
     
     onPrint(newQuote);
   };
 
   const currentClient = clients.find(c => c.id === selectedClient);
+
+  // Blur handlers with timeout to allow click event to register
+  const onClientBlur = () => setTimeout(() => setShowClientDropdown(false), 200);
+  const onServiceBlur = () => setTimeout(() => setShowServiceDropdown(false), 200);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -155,18 +217,38 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Cliente</label>
-            <div className="flex space-x-2">
-              <select 
-                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm"
-                value={selectedClient}
-                onChange={(e) => setSelectedClient(e.target.value)}
-              >
-                <option value="">-- Seleccionar --</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+            <div className="flex space-x-2 relative">
+              <div className="w-full relative">
+                  <input 
+                    type="text"
+                    className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="-- Seleccionar --"
+                    value={clientSearch}
+                    onChange={handleClientSearch}
+                    onFocus={() => setShowClientDropdown(true)}
+                    onBlur={onClientBlur}
+                  />
+                  {showClientDropdown && (
+                    <div className="absolute z-50 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {filteredClients.length > 0 ? filteredClients.map(c => (
+                            <div 
+                                key={c.id} 
+                                className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0"
+                                onClick={() => selectClient(c)}
+                            >
+                                <div className="font-medium text-gray-800">{c.name}</div>
+                                <div className="text-xs text-gray-500">{c.ruc} | {c.code}</div>
+                            </div>
+                        )) : (
+                            <div className="p-3 text-gray-500 text-sm text-center">No se encontraron clientes</div>
+                        )}
+                    </div>
+                  )}
+              </div>
               <button 
                 onClick={() => setShowClientModal(true)} 
-                className="bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition"
+                className="bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition shadow-sm"
+                title="Nuevo Cliente"
               >
                 <i className="fas fa-user-plus"></i>
               </button>
@@ -186,7 +268,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Validez</label>
             <input 
               type="date" 
-              className="w-full p-2 border border-gray-300 rounded-lg"
+              className="w-full p-2 border border-gray-300 rounded-lg shadow-sm"
               value={quoteDate}
               onChange={(e) => setQuoteDate(e.target.value)}
             />
@@ -198,18 +280,41 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Servicio</label>
-                <div className="flex space-x-2">
-                  <select 
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    value={selectedServiceId}
-                    onChange={(e) => handleServiceSelect(e.target.value)}
-                  >
-                    <option value="">-- Seleccionar --</option>
-                    {services.map(s => <option key={s.id} value={s.id}>{s.name} - ${s.price}</option>)}
-                  </select>
+                <div className="flex space-x-2 relative">
+                  <div className="w-full relative">
+                      <input 
+                        type="text"
+                        className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="-- Seleccionar --"
+                        value={serviceSearch}
+                        onChange={handleServiceSearch}
+                        onFocus={() => setShowServiceDropdown(true)}
+                        onBlur={onServiceBlur}
+                      />
+                      {showServiceDropdown && (
+                        <div className="absolute z-50 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            {filteredServices.length > 0 ? filteredServices.map(s => (
+                                <div 
+                                    key={s.id} 
+                                    className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0"
+                                    onClick={() => selectService(s)}
+                                >
+                                    <div className="font-medium text-gray-800">{s.name}</div>
+                                    <div className="text-xs text-gray-500 flex justify-between">
+                                        <span>{s.category || 'General'} | {s.code}</span>
+                                        <span className="font-semibold text-indigo-600">${s.price}</span>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="p-3 text-gray-500 text-sm text-center">No se encontraron servicios</div>
+                            )}
+                        </div>
+                      )}
+                  </div>
                   <button 
                     onClick={() => setShowServiceModal(true)}
-                    className="bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition"
+                    className="bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition shadow-sm"
+                    title="Nuevo Servicio"
                   >
                     <i className="fas fa-plus"></i>
                   </button>
@@ -220,7 +325,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
                <input 
                  type="number" 
                  step="0.01"
-                 className="w-full p-2 border border-gray-300 rounded-lg text-right"
+                 className="w-full p-2 border border-gray-300 rounded-lg text-right shadow-sm"
                  value={previewService.price || ''}
                  onChange={(e) => setPreviewService({...previewService, price: parseFloat(e.target.value)})}
                  placeholder="0.00"
@@ -241,9 +346,9 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
            <div>
              <label className="block text-sm font-medium text-gray-700 mb-1">Detalle Adicional (Opcional)</label>
              <textarea 
-               className="w-full p-2 border border-gray-300 rounded-lg text-sm" 
+               className="w-full p-2 border border-gray-300 rounded-lg text-sm shadow-sm" 
                rows={2}
-               placeholder="Ej: Licencia por 1 año..."
+               placeholder="Ej: Licencia por 1 año, incluye dominio..."
                value={customDetail}
                onChange={(e) => setCustomDetail(e.target.value)}
              />
@@ -259,7 +364,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
 
         {/* Items Table */}
         <div className="overflow-x-auto mb-6">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
@@ -271,10 +376,10 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {quoteItems.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-4 text-gray-500">Añada servicios...</td></tr>
+                <tr><td colSpan={5} className="text-center py-6 text-gray-500">Añada servicios a la cotización...</td></tr>
               ) : (
                 quoteItems.map((item, idx) => (
-                  <tr key={idx}>
+                  <tr key={idx} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-800">{item.name}</div>
                       <div className="text-xs text-gray-500 whitespace-pre-wrap">{item.description}</div>
@@ -292,16 +397,16 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
                        <input 
                         type="number" 
                         step="0.01"
-                        className="w-20 text-right border rounded p-1"
+                        className="w-24 text-right border rounded p-1"
                         value={item.price}
                         onChange={(e) => updateItem(idx, 'price', parseFloat(e.target.value) || 0)}
                       />
                     </td>
-                    <td className="px-4 py-3 text-right font-medium">
+                    <td className="px-4 py-3 text-right font-medium text-gray-900">
                       ${(item.price * item.quantity).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => removeService(idx)} className="text-red-500 hover:text-red-700">
+                      <button onClick={() => removeService(idx)} className="text-red-500 hover:text-red-700 transition" title="Eliminar ítem">
                         <i className="fas fa-trash"></i>
                       </button>
                     </td>
@@ -317,7 +422,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
            <label className="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales</label>
            <textarea 
              className="w-full p-2 border border-gray-300 rounded-lg shadow-sm h-24"
-             placeholder="Términos y condiciones, etc."
+             placeholder="Términos y condiciones, detalles de entrega, etc."
              value={quoteNotes}
              onChange={(e) => setQuoteNotes(e.target.value)}
            />
@@ -343,6 +448,13 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint }) => {
            </div>
         </div>
         
+        {validationError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-start animate-pulse">
+            <i className="fas fa-exclamation-circle mt-0.5 mr-2"></i>
+            <span>{validationError}</span>
+          </div>
+        )}
+
         <button 
           onClick={handleSaveAndPrint}
           className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition shadow-lg text-lg font-semibold flex items-center justify-center"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Service } from '../types';
-import { getServices, saveServices, downloadFile, parseCSV } from '../services/storage';
+import { getServices, saveServices } from '../services/storage';
 import Modal from './Modal';
 
 interface ServicesProps {
@@ -20,10 +20,6 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
 
     // Sort State
     const [sortConfig, setSortConfig] = useState<{ key: keyof Service; direction: 'asc' | 'desc' } | null>(null);
-
-    // Import State
-    const [importFile, setImportFile] = useState<File | null>(null);
-    const [importStatus, setImportStatus] = useState<{msg: string, type: 'success' | 'error' | 'info'} | null>(null);
 
     useEffect(() => {
         setServices(getServices());
@@ -114,84 +110,6 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
             setServices(newServices);
             saveServices(newServices);
         }
-    };
-
-    // CSV Import Logic
-    const downloadTemplate = () => {
-        const headers = "id,code,description,price,category,costointerno";
-        downloadFile("Plantilla_Servicios.csv", headers + "\n");
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setImportFile(file);
-            setImportStatus({ msg: `Archivo seleccionado: ${file.name}`, type: 'info' });
-        }
-    };
-
-    const handleImport = () => {
-        if (!importFile) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const text = e.target?.result as string;
-                const { data } = parseCSV(text);
-                
-                if (data.length === 0) {
-                    setImportStatus({ msg: "No se encontraron datos válidos.", type: 'error' });
-                    return;
-                }
-
-                const mappings = {
-                    'id': 'code',
-                    'code': 'name',
-                    'description': 'description',
-                    'price': 'price',
-                    'category': 'category',
-                    'costointerno': 'cost'
-                };
-
-                let addedCount = 0;
-                let updatedCount = 0;
-                const newServices = [...services];
-
-                data.forEach((row: any) => {
-                    const serviceData: any = {};
-                    // Map fields
-                    Object.entries(mappings).forEach(([csvKey, appKey]) => {
-                        let val = row[csvKey];
-                        if (appKey === 'price' || appKey === 'cost') {
-                            val = parseFloat(String(val).replace('$', '').replace(',', '.')) || 0;
-                        }
-                        serviceData[appKey] = val;
-                    });
-
-                    if (!serviceData.name) return; // Skip invalid rows
-                    if (!serviceData.code) serviceData.code = 'SRV-' + Date.now();
-
-                    // Check duplicate by Code
-                    const existingIdx = newServices.findIndex(s => s.code === serviceData.code);
-                    if (existingIdx >= 0 && serviceData.code) {
-                        newServices[existingIdx] = { ...newServices[existingIdx], ...serviceData };
-                        updatedCount++;
-                    } else {
-                        serviceData.id = `service_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                        newServices.push(serviceData as Service);
-                        addedCount++;
-                    }
-                });
-
-                setServices(newServices);
-                saveServices(newServices);
-                setImportStatus({ msg: `Importación exitosa: ${addedCount} nuevos, ${updatedCount} actualizados.`, type: 'success' });
-                setImportFile(null);
-            } catch (err) {
-                setImportStatus({ msg: "Error al procesar el archivo CSV.", type: 'error' });
-            }
-        };
-        reader.readAsText(importFile);
     };
 
     const ServiceForm = () => (
@@ -312,40 +230,6 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
                         )}
                     </tbody>
                 </table>
-            </div>
-
-                <div className="pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-bold mb-4 text-gray-700">Importar Servicios (CSV)</h3>
-                
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-                    <div className="flex flex-col md:flex-row gap-4 items-center">
-                        <button onClick={downloadTemplate} className="w-full md:w-auto bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium shadow-sm transition">
-                            <i className="fas fa-download mr-2 text-blue-500"></i> Descargar Plantilla
-                        </button>
-                        
-                        <div className="flex-1 w-full flex gap-2 items-center">
-                            <input 
-                                type="file" 
-                                accept=".csv" 
-                                onChange={handleFileChange}
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                            />
-                        </div>
-                        <button 
-                            onClick={handleImport} 
-                            disabled={!importFile}
-                            className="w-full md:w-auto bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md transition"
-                        >
-                            Cargar
-                        </button>
-                    </div>
-                    {importStatus && (
-                        <div className={`mt-4 p-3 rounded-lg text-sm border ${importStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : importStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
-                            <i className={`fas ${importStatus.type === 'error' ? 'fa-times-circle' : 'fa-check-circle'} mr-2`}></i>
-                            {importStatus.msg}
-                        </div>
-                    )}
-                </div>
             </div>
         </div>
     );

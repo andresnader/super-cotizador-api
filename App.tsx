@@ -58,21 +58,21 @@ const App: React.FC = () => {
       >
         <div className="flex flex-col h-full bg-gray-50">
             {/* Cabecera de Acciones - Oculta al imprimir */}
-            <div className="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200 no-print sticky top-0 z-10 print:hidden">
+            <div className="flex justify-between items-center px-4 md:px-6 py-4 bg-white border-b border-gray-200 no-print sticky top-0 z-10 print:hidden">
                 <div>
-                    <h3 className="text-xl font-bold text-gray-800">Vista Previa</h3>
-                    <p className="text-sm text-gray-500">Revise la cotización antes de imprimir.</p>
+                    <h3 className="text-lg md:text-xl font-bold text-gray-800">Vista Previa</h3>
+                    <p className="text-xs md:text-sm text-gray-500">Revise la cotización antes de imprimir.</p>
                 </div>
                 <div className="flex space-x-3">
                     <button 
                         onClick={() => setPreviewQuote(null)}
-                        className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                        className="px-3 md:px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition shadow-sm text-sm font-medium"
                     >
                         Cerrar
                     </button>
                     <button 
                         onClick={executePrint}
-                        className="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition shadow-md flex items-center"
+                        className="px-4 md:px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition shadow-md flex items-center text-sm"
                     >
                         <i className="fas fa-print mr-2"></i> Imprimir PDF
                     </button>
@@ -80,8 +80,8 @@ const App: React.FC = () => {
             </div>
             
             {/* Contenedor con ID específico para CSS @media print */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 print:p-0 print:overflow-visible">
-                <div id="print-section" className="bg-white p-8 md:p-12 border border-gray-200 shadow-sm mx-auto w-full max-w-4xl print:border-none print:shadow-none print:w-full print:max-w-none print:p-0">
+            <div className="flex-1 overflow-y-auto p-2 md:p-8 print:p-0 print:overflow-visible">
+                <div id="print-section" className="bg-white p-4 md:p-12 border border-gray-200 shadow-sm mx-auto w-full max-w-4xl print:border-none print:shadow-none print:w-full print:max-w-none print:p-0">
                     {previewQuote && <PrintTemplate quote={previewQuote} settings={companySettings} />}
                 </div>
             </div>
@@ -111,21 +111,21 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
   const logoSrc = settings.logo || "https://placehold.co/200x100/eef2ff/4f46e5?text=Tu+Logo";
   
   return (
-    <div className="font-sans text-gray-800 print-content">
-      <header className="flex justify-between items-start mb-10 pb-4 border-b border-gray-300">
-        <div className="w-1/2">
-           <img src={logoSrc} alt="Logo" className="max-h-24 w-auto object-contain" />
+    <div className="font-sans text-gray-800 print-content text-sm md:text-base">
+      <header className="flex flex-col md:flex-row justify-between items-start mb-8 md:mb-10 pb-4 border-b border-gray-300 gap-4">
+        <div className="w-full md:w-1/2 flex justify-center md:justify-start">
+           <img src={logoSrc} alt="Logo" className="max-h-20 md:max-h-24 w-auto object-contain" />
         </div>
-        <div className="w-1/2 text-right">
-          <h1 className="text-4xl font-bold tracking-tight" style={{ color: settings.primaryColor }}>COTIZACIÓN</h1>
-          <p className="text-gray-600 mt-2 text-lg">Nº: <span className="font-mono font-medium text-gray-800">{quote.number}</span></p>
+        <div className="w-full md:w-1/2 text-center md:text-right">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ color: settings.primaryColor }}>COTIZACIÓN</h1>
+          <p className="text-gray-600 mt-2 text-base md:text-lg">Nº: <span className="font-mono font-medium text-gray-800">{quote.number}</span></p>
         </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-12 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 mb-8 md:mb-12">
         <div>
-          <h3 className="font-bold text-gray-500 mb-3 uppercase text-xs tracking-wider">Facturar a (Cliente):</h3>
-          <div className="bg-gray-50 p-5 rounded-lg border border-gray-100 print:bg-white print:border-gray-200">
+          <h3 className="font-bold text-gray-500 mb-2 md:mb-3 uppercase text-xs tracking-wider">Facturar a (Cliente):</h3>
+          <div className="bg-gray-50 p-4 md:p-5 rounded-lg border border-gray-100 print:bg-white print:border-gray-200">
             <p className="font-bold text-lg text-gray-900 mb-1">{quote.client.name}</p>
             <p className="text-gray-700 mb-1"><span className="font-medium text-xs text-gray-500 uppercase mr-2">RUC/CI:</span>{quote.client.ruc}</p>
             {quote.client.address && <p className="text-gray-700 mb-1"><span className="font-medium text-xs text-gray-500 uppercase mr-2">Dir:</span>{quote.client.address}</p>}
@@ -134,8 +134,8 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
           </div>
         </div>
         <div>
-          <h3 className="font-bold text-gray-500 mb-3 uppercase text-xs tracking-wider">De (Emisor):</h3>
-          <div className="bg-gray-50 p-5 rounded-lg border border-gray-100 text-right print:bg-white print:border-gray-200">
+          <h3 className="font-bold text-gray-500 mb-2 md:mb-3 uppercase text-xs tracking-wider">De (Emisor):</h3>
+          <div className="bg-gray-50 p-4 md:p-5 rounded-lg border border-gray-100 md:text-right print:bg-white print:border-gray-200">
             <p className="font-bold text-lg text-gray-900 mb-1">{settings.name}</p>
             <p className="text-gray-700 mb-1">{settings.ruc}</p>
             <p className="text-gray-700 mb-1">{settings.address}</p>
@@ -144,7 +144,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100 print:bg-white print:border-gray-200">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100 print:bg-white print:border-gray-200 gap-2">
           <div>
             <span className="text-gray-500 text-xs uppercase font-bold mr-2">Fecha de Emisión:</span>
             <span className="font-medium text-gray-800">{quote.issueDate}</span>
@@ -155,29 +155,31 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
           </div>
       </div>
 
-      <table className="w-full mb-10 border-collapse">
-        <thead>
-          <tr style={{ backgroundColor: settings.primaryColor, color: 'white', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-            <th className="py-3 px-4 text-left font-semibold rounded-tl-lg text-sm uppercase tracking-wide">Descripción</th>
-            <th className="py-3 px-4 text-center font-semibold text-sm uppercase tracking-wide w-24">Cant.</th>
-            <th className="py-3 px-4 text-right font-semibold text-sm uppercase tracking-wide w-32">Precio Unit.</th>
-            <th className="py-3 px-4 text-right font-semibold rounded-tr-lg text-sm uppercase tracking-wide w-32">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {quote.items.map((item, idx) => (
-            <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 transition-colors print:hover:bg-transparent">
-              <td className="py-4 px-4 align-top">
-                <p className="font-bold text-gray-800">{item.name} <span className="text-xs text-gray-400 font-normal ml-1">({item.code})</span></p>
-                {item.description && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap leading-relaxed">{item.description}</p>}
-              </td>
-              <td className="py-4 px-4 text-center align-top text-gray-700">{item.quantity}</td>
-              <td className="py-4 px-4 text-right align-top text-gray-700">${item.price.toFixed(2)}</td>
-              <td className="py-4 px-4 text-right align-top font-bold text-gray-900">${(item.price * item.quantity).toFixed(2)}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full mb-10 border-collapse min-w-[500px]">
+            <thead>
+            <tr style={{ backgroundColor: settings.primaryColor, color: 'white', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                <th className="py-3 px-4 text-left font-semibold rounded-tl-lg text-xs md:text-sm uppercase tracking-wide">Descripción</th>
+                <th className="py-3 px-4 text-center font-semibold text-xs md:text-sm uppercase tracking-wide w-16 md:w-24">Cant.</th>
+                <th className="py-3 px-4 text-right font-semibold text-xs md:text-sm uppercase tracking-wide w-24 md:w-32">Precio Unit.</th>
+                <th className="py-3 px-4 text-right font-semibold rounded-tr-lg text-xs md:text-sm uppercase tracking-wide w-24 md:w-32">Total</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+            {quote.items.map((item, idx) => (
+                <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 transition-colors print:hover:bg-transparent">
+                <td className="py-4 px-4 align-top">
+                    <p className="font-bold text-gray-800">{item.name} <span className="text-xs text-gray-400 font-normal ml-1">({item.code})</span></p>
+                    {item.description && <p className="text-xs md:text-sm text-gray-600 mt-1 whitespace-pre-wrap leading-relaxed">{item.description}</p>}
+                </td>
+                <td className="py-4 px-4 text-center align-top text-gray-700">{item.quantity}</td>
+                <td className="py-4 px-4 text-right align-top text-gray-700">${item.price.toFixed(2)}</td>
+                <td className="py-4 px-4 text-right align-top font-bold text-gray-900">${(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+      </div>
 
       <div className="flex justify-end">
         <div className="w-full md:w-1/2 lg:w-5/12">
@@ -197,7 +199,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
       </div>
 
       {quote.notes && (
-        <div className="mt-12 pt-6 border-t border-gray-200">
+        <div className="mt-8 md:mt-12 pt-6 border-t border-gray-200">
           <h4 className="font-bold text-sm mb-3 text-gray-800 uppercase tracking-wide">Términos y Condiciones / Notas:</h4>
           <div className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100 print:bg-white print:border-gray-200">
             {quote.notes}
@@ -205,8 +207,8 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
         </div>
       )}
 
-      <footer className="mt-20 text-center text-gray-500 text-sm border-t border-gray-200 pt-8">
-        <div className="mb-4 flex justify-center space-x-6">
+      <footer className="mt-12 md:mt-20 text-center text-gray-500 text-sm border-t border-gray-200 pt-8">
+        <div className="mb-4 flex flex-col md:flex-row justify-center space-y-2 md:space-y-0 md:space-x-6">
           {settings.website && (
             <span style={{ color: settings.primaryColor }} className="font-medium">{settings.website}</span>
           )}
