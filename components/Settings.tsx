@@ -94,15 +94,27 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdate }) => {
             </form>
 
             <div className="mt-12 pt-6 border-t border-gray-200">
-                <h3 className="font-bold mb-4 text-xl">Gestión de Datos (Backup)</h3>
-                <p className="text-sm text-gray-600 mb-4">Exporte o importe todos los datos (clientes, servicios, historial) en formato JSON para copias de seguridad.</p>
-                <div className="flex space-x-4">
-                    <button onClick={handleBackupDownload} className="flex-1 bg-gray-600 text-white px-4 py-3 rounded hover:bg-gray-700 transition">
-                        <i className="fas fa-download mr-2"></i> Exportar JSON
+                <h3 className="font-bold mb-2 text-xl text-gray-800">Gestión de Datos (Backup)</h3>
+                <p className="text-sm text-gray-600 mb-6">Exporte o importe todos los datos (clientes, servicios, historial) en formato JSON para copias de seguridad.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button 
+                        onClick={handleBackupDownload} 
+                        className="bg-gray-700 hover:bg-gray-800 text-white p-4 rounded-lg flex items-center justify-center gap-3 transition shadow-md group"
+                    >
+                        <i className="fas fa-download text-xl group-hover:scale-110 transition-transform"></i>
+                        <span className="font-semibold text-lg">Exportar JSON</span>
                     </button>
-                    <label className="flex-1 bg-gray-400 text-white px-4 py-3 rounded hover:bg-gray-500 transition cursor-pointer text-center relative">
-                        <i className="fas fa-file-import mr-2"></i> Importar JSON
-                        <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".json" onChange={handleBackupUpload} />
+                    
+                    <label className="bg-gray-400 hover:bg-gray-500 text-white p-4 rounded-lg flex items-center justify-center gap-3 transition shadow-md cursor-pointer relative group">
+                        <i className="fas fa-file-import text-xl group-hover:scale-110 transition-transform"></i>
+                        <span className="font-semibold text-lg">Importar JSON</span>
+                        <input 
+                            type="file" 
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                            accept=".json" 
+                            onChange={handleBackupUpload} 
+                        />
                     </label>
                 </div>
             </div>

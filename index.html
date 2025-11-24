@@ -9,12 +9,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @media print {
+            body, html {
+                height: auto !important;
+                overflow: visible !important;
+                background: white !important;
+            }
+            
+            /* Ocultar todo por defecto */
             body * {
                 visibility: hidden;
             }
+
+            /* Mostrar solo el área de impresión y sus hijos */
             #print-section, #print-section * {
                 visibility: visible;
             }
+
+            /* Posicionamiento absoluto para ocupar toda la hoja */
             #print-section {
                 position: absolute;
                 left: 0;
@@ -23,14 +34,30 @@
                 margin: 0;
                 padding: 0;
                 background: white;
+                border: none;
+                box-shadow: none;
             }
-            .no-print {
+
+            /* Clases utilitarias para ocultar elementos específicos al imprimir */
+            .no-print, .print\:hidden {
                 display: none !important;
             }
-            /* Ocultar scrollbars al imprimir */
+            
+            /* Asegurar que los modales no corten el contenido */
+            .modal-content-print-fix {
+                position: static !important;
+                overflow: visible !important;
+                max-height: none !important;
+                width: 100% !important;
+                transform: none !important;
+                box-shadow: none !important;
+            }
+            
+            /* Ocultar scrollbars */
             ::-webkit-scrollbar {
                 display: none;
             }
+            
             @page {
                 size: auto;
                 margin: 10mm;

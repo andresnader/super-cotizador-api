@@ -97,8 +97,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
             const allQuotes = getQuotes();
             const updatedAll = allQuotes.filter(q => q.id !== quoteId);
             saveQuotes(updatedAll);
-            
-            // Update local view
             setClientQuotes(clientQuotes.filter(q => q.id !== quoteId));
         }
     };
@@ -107,8 +105,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         const allQuotes = getQuotes();
         const updatedAll = allQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q);
         saveQuotes(updatedAll);
-        
-        // Update local view
         setClientQuotes(clientQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q));
     };
 
@@ -128,7 +124,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
 
     const handleImport = () => {
         if (!importFile) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
@@ -198,7 +193,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
             <input name="address" value={form.address || ''} onChange={handleChange} placeholder="Dirección" className="p-3 border rounded-lg w-full" />
             
             <div className="flex gap-3 mt-4">
-                <button type="button" onClick={() => { setShowFormModal(false); if(isModal) window.location.reload(); /* fallback for quick close */ }} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+                <button type="button" onClick={() => { setShowFormModal(false); if(isModal) window.location.reload(); }} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
                 <button type="submit" className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
                     {isEditing ? 'Actualizar Cliente' : 'Guardar Cliente'}
                 </button>
@@ -206,7 +201,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         </form>
     );
 
-    // If used as a quick add modal in QuoteBuilder
+    // Quick Add Modal View
     if (isModal) {
         return (
             <div className="bg-white p-4">
@@ -216,13 +211,15 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         );
     }
 
+    // Main View
     return (
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 max-w-6xl mx-auto">
+            {/* Header with Title and Add Button */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Gestión de Clientes</h2>
                 <button 
                     onClick={openCreateModal}
-                    className="w-full md:w-auto bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center justify-center"
+                    className="w-full md:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center justify-center font-medium"
                 >
                     <i className="fas fa-plus mr-2"></i> Agregar Nuevo Cliente
                 </button>
@@ -236,7 +233,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 </div>
             </Modal>
             
-            {/* Search Bar */}
+            {/* Search Bar - Styles matching Services.tsx */}
             <div className="mb-6 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i className="fas fa-search text-gray-400"></i>
@@ -250,76 +247,71 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 />
             </div>
 
-            <div className="overflow-x-auto max-h-[600px] overflow-y-auto mb-8 border rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50 sticky top-0">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-bold uppercase text-gray-500 tracking-wider">Nombre / Contacto</th>
-                            <th className="px-6 py-3 text-left text-xs font-bold uppercase text-gray-500 tracking-wider">RUC / Dirección</th>
-                            <th className="px-6 py-3 text-right text-xs font-bold uppercase text-gray-500 tracking-wider">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredClients.length === 0 ? (
-                            <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500">No se encontraron clientes.</td></tr>
-                        ) : (
-                            filteredClients.map(c => (
-                                <tr key={c.id} className="hover:bg-gray-50 transition">
-                                    <td className="px-6 py-4">
-                                        <div className="font-bold text-gray-900">{c.name}</div>
-                                        <div className="text-sm text-gray-500">{c.contact}</div>
-                                        {c.phone && <div className="text-xs text-gray-400 mt-1"><i className="fas fa-phone mr-1"></i>{c.phone}</div>}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="font-mono text-sm bg-gray-100 inline-block px-2 py-0.5 rounded text-gray-700 mb-1">{c.ruc}</div>
-                                        <div className="text-sm text-gray-500 truncate max-w-xs" title={c.address}>{c.address}</div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right whitespace-nowrap">
-                                        <button 
-                                            onClick={() => handleViewQuotes(c)} 
-                                            className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium mr-2 hover:bg-indigo-100 transition"
-                                            title="Ver Cotizaciones"
-                                        >
-                                            <i className="fas fa-history mr-1"></i> Historial
-                                        </button>
-                                        <button onClick={() => handleEdit(c)} className="text-blue-600 hover:text-blue-800 mr-3 transition" title="Editar"><i className="fas fa-edit"></i></button>
-                                        <button onClick={() => handleDelete(c.id)} className="text-red-500 hover:text-red-700 transition" title="Eliminar"><i className="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+            {/* Client List - Cards View */}
+            <div className="space-y-4">
+                {filteredClients.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                        No se encontraron clientes.
+                    </div>
+                ) : (
+                    filteredClients.map(c => (
+                        <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            {/* Left: Name and Contact */}
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-gray-900 leading-tight">{c.name}</h3>
+                                <div className="text-sm text-gray-500 mt-1">
+                                    {c.contact && <span>{c.contact}</span>}
+                                    {c.phone && <span className="ml-2 text-gray-400">• {c.phone}</span>}
+                                </div>
+                            </div>
+
+                            {/* Center: RUC and Address */}
+                            <div className="flex-1 md:text-right md:pr-8">
+                                <div className="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded text-sm font-mono font-medium mb-1">
+                                    {c.ruc}
+                                </div>
+                                <div className="text-sm text-gray-500 uppercase tracking-wide">
+                                    {c.address || 'SIN DIRECCIÓN'}
+                                </div>
+                            </div>
+
+                            {/* Right: Actions */}
+                            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                                <button 
+                                    onClick={() => handleViewQuotes(c)} 
+                                    className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition flex items-center"
+                                >
+                                    <i className="fas fa-history mr-2"></i> Historial
+                                </button>
+                                <div className="flex gap-1">
+                                    <button onClick={() => handleEdit(c)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition" title="Editar">
+                                        <i className="fas fa-pencil-alt"></i>
+                                    </button>
+                                    <button onClick={() => handleDelete(c.id)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition" title="Eliminar">
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
 
-            <div className="pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-bold mb-4 text-gray-700">Importar Clientes (CSV)</h3>
-                
+            {/* CSV Import Section */}
+            <div className="mt-12 pt-6 border-t border-gray-200">
+                <h3 className="text-sm font-bold uppercase text-gray-500 mb-4 tracking-wider">Importar Clientes (CSV)</h3>
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
                     <div className="flex flex-col md:flex-row gap-4 items-center">
                          <button onClick={downloadTemplate} className="w-full md:w-auto bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium shadow-sm transition">
-                            <i className="fas fa-download mr-2 text-blue-500"></i> Descargar Plantilla
+                            <i className="fas fa-download mr-2 text-blue-500"></i> Plantilla
                         </button>
-                        
-                        <div className="flex-1 w-full flex gap-2 items-center">
-                            <input 
-                                type="file" 
-                                accept=".csv" 
-                                onChange={handleFileChange}
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                            />
-                        </div>
-                         <button 
-                            onClick={handleImport} 
-                            disabled={!importFile}
-                            className="w-full md:w-auto bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md transition"
-                        >
+                        <input type="file" accept=".csv" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-white file:text-indigo-700 border border-gray-200 rounded-lg cursor-pointer" />
+                         <button onClick={handleImport} disabled={!importFile} className="w-full md:w-auto bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md transition">
                             Cargar
                         </button>
                     </div>
                     {importStatus && (
-                        <div className={`mt-4 p-3 rounded-lg text-sm border ${importStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : importStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
-                            <i className={`fas ${importStatus.type === 'error' ? 'fa-times-circle' : 'fa-check-circle'} mr-2`}></i>
+                        <div className={`mt-4 p-3 rounded-lg text-sm border ${importStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
                             {importStatus.msg}
                         </div>
                     )}
@@ -359,15 +351,9 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {clientQuotes.map(q => (
                                         <tr key={q.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-3 text-sm font-mono font-semibold text-indigo-600">
-                                                {q.number}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600">
-                                                {q.issueDate}
-                                            </td>
-                                            <td className="px-4 py-3 text-right text-sm font-bold text-gray-800">
-                                                ${q.total.toFixed(2)}
-                                            </td>
+                                            <td className="px-4 py-3 text-sm font-mono font-semibold text-indigo-600">{q.number}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">{q.issueDate}</td>
+                                            <td className="px-4 py-3 text-right text-sm font-bold text-gray-800">${q.total.toFixed(2)}</td>
                                             <td className="px-4 py-3 text-center">
                                                 <select 
                                                     value={q.status} 

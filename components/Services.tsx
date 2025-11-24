@@ -18,6 +18,9 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Sort State
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Service; direction: 'asc' | 'desc' } | null>(null);
+
     // Import State
     const [importFile, setImportFile] = useState<File | null>(null);
     const [importStatus, setImportStatus] = useState<{msg: string, type: 'success' | 'error' | 'info'} | null>(null);
@@ -35,6 +38,42 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
             (s.category && s.category.toLowerCase().includes(term))
         );
     });
+
+    // Sort Logic
+    const handleSort = (key: keyof Service) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedServices = [...filteredServices].sort((a, b) => {
+        if (!sortConfig) return 0;
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue === bValue) return 0;
+        
+        // Handle nulls/undefined safely
+        if (aValue === undefined || aValue === null) return 1;
+        if (bValue === undefined || bValue === null) return -1;
+
+        if (sortConfig.direction === 'asc') {
+            return aValue < bValue ? -1 : 1;
+        } else {
+            return aValue > bValue ? -1 : 1;
+        }
+    });
+
+    const getSortIcon = (key: keyof Service) => {
+        if (!sortConfig || sortConfig.key !== key) {
+            return <i className="fas fa-sort text-gray-300 ml-1"></i>;
+        }
+        return sortConfig.direction === 'asc' 
+            ? <i className="fas fa-sort-up text-indigo-600 ml-1"></i>
+            : <i className="fas fa-sort-down text-indigo-600 ml-1"></i>;
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const val = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
@@ -225,31 +264,48 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
                 />
             </div>
 
-            <div className="overflow-x-auto max-h-[600px] overflow-y-auto mb-8 border rounded-lg">
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto mb-8 border border-gray-200 rounded-lg">
                 <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50 sticky top-0">
+                    <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-bold uppercase text-gray-500 tracking-wider">Código</th>
-                            <th className="px-6 py-3 text-left text-xs font-bold uppercase text-gray-500 tracking-wider">Nombre / Categoría</th>
-                            <th className="px-6 py-3 text-right text-xs font-bold uppercase text-gray-500 tracking-wider">Precio</th>
-                            <th className="px-6 py-3 text-right text-xs font-bold uppercase text-gray-500 tracking-wider">Acciones</th>
+                            <th 
+                                className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500 tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                                onClick={() => handleSort('code')}
+                            >
+                                Código {getSortIcon('code')}
+                            </th>
+                            <th 
+                                className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500 tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                                onClick={() => handleSort('name')}
+                            >
+                                Nombre / Categoría {getSortIcon('name')}
+                            </th>
+                            <th 
+                                className="px-6 py-4 text-right text-xs font-bold uppercase text-gray-500 tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                                onClick={() => handleSort('price')}
+                            >
+                                Precio {getSortIcon('price')}
+                            </th>
+                            <th className="px-6 py-4 text-right text-xs font-bold uppercase text-gray-500 tracking-wider">
+                                Acciones
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredServices.length === 0 ? (
+                        {sortedServices.length === 0 ? (
                             <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No se encontraron servicios.</td></tr>
                         ) : (
-                            filteredServices.map(s => (
-                                <tr key={s.id} className="hover:bg-gray-50 transition">
+                            sortedServices.map(s => (
+                                <tr key={s.id} className="hover:bg-gray-50 transition group">
                                     <td className="px-6 py-4 font-mono text-sm font-semibold text-indigo-600">{s.code}</td>
                                     <td className="px-6 py-4">
-                                        <div className="font-bold text-gray-900">{s.name}</div>
-                                        <div className="text-xs text-gray-500 bg-gray-100 inline-block px-2 py-0.5 rounded mt-1">{s.category || 'General'}</div>
+                                        <div className="font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">{s.name}</div>
+                                        <div className="text-xs text-gray-500 bg-gray-100 border border-gray-200 inline-block px-2 py-0.5 rounded mt-1">{s.category || 'General'}</div>
                                     </td>
                                     <td className="px-6 py-4 text-right font-bold text-gray-800">${s.price.toFixed(2)}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-800 mr-3 transition" title="Editar"><i className="fas fa-edit"></i></button>
-                                        <button onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 transition" title="Eliminar"><i className="fas fa-trash"></i></button>
+                                        <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-800 mr-3 transition p-2 hover:bg-blue-50 rounded" title="Editar"><i className="fas fa-edit"></i></button>
+                                        <button onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 transition p-2 hover:bg-red-50 rounded" title="Eliminar"><i className="fas fa-trash"></i></button>
                                     </td>
                                 </tr>
                             ))

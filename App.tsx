@@ -50,9 +50,15 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Modal de Previsualización e Impresión */}
-      <Modal isOpen={!!previewQuote} onClose={() => setPreviewQuote(null)} maxWidth="max-w-5xl">
+      <Modal 
+        isOpen={!!previewQuote} 
+        onClose={() => setPreviewQuote(null)} 
+        maxWidth="max-w-5xl"
+        hideCloseButton={true} // Ocultar la X por defecto para usar la cabecera personalizada
+      >
         <div className="flex flex-col h-full bg-gray-50">
-            <div className="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200 no-print sticky top-0 z-10">
+            {/* Cabecera de Acciones - Oculta al imprimir */}
+            <div className="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200 no-print sticky top-0 z-10 print:hidden">
                 <div>
                     <h3 className="text-xl font-bold text-gray-800">Vista Previa</h3>
                     <p className="text-sm text-gray-500">Revise la cotización antes de imprimir.</p>
@@ -74,15 +80,15 @@ const App: React.FC = () => {
             </div>
             
             {/* Contenedor con ID específico para CSS @media print */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-8">
-                <div id="print-section" className="bg-white p-8 md:p-12 border border-gray-200 shadow-sm mx-auto w-full max-w-4xl">
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 print:p-0 print:overflow-visible">
+                <div id="print-section" className="bg-white p-8 md:p-12 border border-gray-200 shadow-sm mx-auto w-full max-w-4xl print:border-none print:shadow-none print:w-full print:max-w-none print:p-0">
                     {previewQuote && <PrintTemplate quote={previewQuote} settings={companySettings} />}
                 </div>
             </div>
         </div>
       </Modal>
 
-      {/* Main App */}
+      {/* Main App - Oculta al imprimir */}
       <div className="no-print flex-grow">
         <Layout 
           activeTab={activeTab} 
@@ -119,7 +125,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
       <div className="grid grid-cols-2 gap-12 mb-12">
         <div>
           <h3 className="font-bold text-gray-500 mb-3 uppercase text-xs tracking-wider">Facturar a (Cliente):</h3>
-          <div className="bg-gray-50 p-5 rounded-lg border border-gray-100">
+          <div className="bg-gray-50 p-5 rounded-lg border border-gray-100 print:bg-white print:border-gray-200">
             <p className="font-bold text-lg text-gray-900 mb-1">{quote.client.name}</p>
             <p className="text-gray-700 mb-1"><span className="font-medium text-xs text-gray-500 uppercase mr-2">RUC/CI:</span>{quote.client.ruc}</p>
             {quote.client.address && <p className="text-gray-700 mb-1"><span className="font-medium text-xs text-gray-500 uppercase mr-2">Dir:</span>{quote.client.address}</p>}
@@ -129,7 +135,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
         </div>
         <div>
           <h3 className="font-bold text-gray-500 mb-3 uppercase text-xs tracking-wider">De (Emisor):</h3>
-          <div className="bg-gray-50 p-5 rounded-lg border border-gray-100 text-right">
+          <div className="bg-gray-50 p-5 rounded-lg border border-gray-100 text-right print:bg-white print:border-gray-200">
             <p className="font-bold text-lg text-gray-900 mb-1">{settings.name}</p>
             <p className="text-gray-700 mb-1">{settings.ruc}</p>
             <p className="text-gray-700 mb-1">{settings.address}</p>
@@ -138,7 +144,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100">
+      <div className="flex justify-between items-center mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100 print:bg-white print:border-gray-200">
           <div>
             <span className="text-gray-500 text-xs uppercase font-bold mr-2">Fecha de Emisión:</span>
             <span className="font-medium text-gray-800">{quote.issueDate}</span>
@@ -151,7 +157,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
 
       <table className="w-full mb-10 border-collapse">
         <thead>
-          <tr style={{ backgroundColor: settings.primaryColor, color: 'white' }}>
+          <tr style={{ backgroundColor: settings.primaryColor, color: 'white', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
             <th className="py-3 px-4 text-left font-semibold rounded-tl-lg text-sm uppercase tracking-wide">Descripción</th>
             <th className="py-3 px-4 text-center font-semibold text-sm uppercase tracking-wide w-24">Cant.</th>
             <th className="py-3 px-4 text-right font-semibold text-sm uppercase tracking-wide w-32">Precio Unit.</th>
@@ -160,7 +166,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
         </thead>
         <tbody>
           {quote.items.map((item, idx) => (
-            <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+            <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 transition-colors print:hover:bg-transparent">
               <td className="py-4 px-4 align-top">
                 <p className="font-bold text-gray-800">{item.name} <span className="text-xs text-gray-400 font-normal ml-1">({item.code})</span></p>
                 {item.description && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap leading-relaxed">{item.description}</p>}
@@ -193,7 +199,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
       {quote.notes && (
         <div className="mt-12 pt-6 border-t border-gray-200">
           <h4 className="font-bold text-sm mb-3 text-gray-800 uppercase tracking-wide">Términos y Condiciones / Notas:</h4>
-          <div className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100">
+          <div className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100 print:bg-white print:border-gray-200">
             {quote.notes}
           </div>
         </div>
