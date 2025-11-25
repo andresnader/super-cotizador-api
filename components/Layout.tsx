@@ -6,9 +6,11 @@ interface LayoutProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   settings: CompanySettings;
+  userProfile?: any;
+  onLogout?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, settings }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, settings, userProfile, onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const tabs = [
@@ -76,6 +78,22 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
                                 </button>
                             </li>
                         ))}
+                        {onLogout && (
+                            <li className="w-full md:w-auto">
+                                <button
+                                    onClick={onLogout}
+                                    className="w-full md:w-auto text-left md:text-center px-4 py-3 md:py-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 md:hover:bg-transparent transition-all duration-200 flex items-center md:justify-center border-b-2 border-transparent"
+                                    title={userProfile?.name ? `Salir de ${userProfile.name}` : 'Cerrar Sesión'}
+                                >
+                                    {userProfile?.picture ? (
+                                        <img src={userProfile.picture} className="w-6 h-6 rounded-full md:mr-2" alt="Avatar" />
+                                    ) : (
+                                        <i className="fas fa-sign-out-alt w-6 md:w-auto md:mr-2 text-center"></i>
+                                    )}
+                                    <span className={userProfile?.picture ? "hidden md:inline" : ""}>Salir</span>
+                                </button>
+                            </li>
+                         )}
                     </ul>
                 </nav>
             </div>

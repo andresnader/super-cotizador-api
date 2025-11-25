@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Quote, CompanySettings } from '../types';
-import { getQuotes, saveQuotes } from '../services/storage';
+import { fetchQuotes, updateQuoteStatus } from '../services/google';
 
 interface HistoryProps {
     settings: CompanySettings;
@@ -10,11 +11,13 @@ interface HistoryProps {
 
 const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
     const [quotes, setQuotes] = useState<Quote[]>([]);
+    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | '30' | '90'>('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+<<<<<<< HEAD
         const loadQuotes = async () => {
             try {
                 setLoading(true);
@@ -22,10 +25,20 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
                 setQuotes(data);
             } catch (error) {
                 console.error('Error loading quotes:', error);
+=======
+        const load = async () => {
+            setLoading(true);
+            try {
+                const data = await fetchQuotes();
+                setQuotes(data);
+            } catch (e) {
+                console.error(e);
+>>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
             } finally {
                 setLoading(false);
             }
         };
+<<<<<<< HEAD
         loadQuotes();
     }, []);
 
@@ -52,25 +65,29 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
     };
 
     // Combined Filter Logic
-    const filteredQuotes = quotes.filter(q => {
-        // Date Filter
-        let passesDate = true;
-        if (filter !== 'all') {
-            const [day, month, year] = q.issueDate.split('/');
-            const date = new Date(`${year}-${month}-${day}`);
-            const now = new Date();
-            const diffDays = (now.getTime() - date.getTime()) / (1000 * 3600 * 24);
-            passesDate = diffDays <= parseInt(filter);
+=======
+        load();
+    }, []);
+
+    const handleStatusChange = async (quote: Quote, status: Quote['status']) => {
+        if (!quote.rowId) return;
+        try {
+            await updateQuoteStatus(quote.rowId, status);
+            setQuotes(quotes.map(q => q.id === quote.id ? { ...q, status } : q));
+        } catch (e) {
+            console.error(e);
+            alert("Error actualizando estado");
         }
+    };
 
-        // Search Filter
+>>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
+    const filteredQuotes = quotes.filter(q => {
+        // Basic search
         const term = searchTerm.toLowerCase();
-        const passesSearch = (
-            q.number.toLowerCase().includes(term) ||
-            q.client.name.toLowerCase().includes(term)
+        return (
+            (q.number || '').toLowerCase().includes(term) ||
+            (q.client?.name || '').toLowerCase().includes(term)
         );
-
-        return passesDate && passesSearch;
     }).reverse();
 
     if (loading) {
@@ -87,6 +104,7 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
     return (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+<<<<<<< HEAD
                 <h2 className="text-2xl font-bold text-gray-800">Historial</h2>
 
                 <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-center">
@@ -110,32 +128,42 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
                         <button onClick={() => setFilter('30')} className={`px-3 py-1.5 rounded text-sm transition-colors ${filter === '30' ? 'bg-indigo-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}>30 días</button>
                         <button onClick={() => setFilter('90')} className={`px-3 py-1.5 rounded text-sm transition-colors ${filter === '90' ? 'bg-indigo-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}>90 días</button>
                     </div>
+=======
+                <h2 className="text-2xl font-bold text-gray-800">Historial (Drive)</h2>
+                <div className="relative w-full sm:w-64">
+                    <input 
+                        type="text" 
+                        placeholder="Buscar..." 
+                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+>>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Número</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredQuotes.length === 0 ? (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">No se encontraron cotizaciones.</td></tr>
-                        ) : (
-                            filteredQuotes.map(q => (
+            {loading ? <p className="text-center py-8">Cargando...</p> : (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Número</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredQuotes.map(q => (
                                 <tr key={q.id}>
                                     <td className="px-4 py-3 font-mono text-xs font-semibold">{q.number}</td>
                                     <td className="px-4 py-3">{q.client.name}</td>
                                     <td className="px-4 py-3">{q.issueDate}</td>
                                     <td className="px-4 py-3 text-right font-semibold">${q.total.toFixed(2)}</td>
                                     <td className="px-4 py-3 text-center">
+<<<<<<< HEAD
                                         <select
                                             value={q.status}
                                             onChange={(e) => handleStatusChange(q.id, e.target.value as any)}
@@ -144,6 +172,12 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
                                                 ${q.status === 'Rechazada' ? 'bg-red-100 text-red-800' : ''}
                                                 ${q.status === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : ''}
                                             `}
+=======
+                                        <select 
+                                            value={q.status} 
+                                            onChange={(e) => handleStatusChange(q, e.target.value as any)}
+                                            className="p-1 rounded text-xs border border-gray-300"
+>>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
                                         >
                                             <option value="Pendiente">Pendiente</option>
                                             <option value="Aceptada">Aceptada</option>
@@ -151,19 +185,17 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
                                         </select>
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <button onClick={() => onPrint(q)} className="text-indigo-600 hover:text-indigo-900 mr-3" title="Imprimir">
-                                            <i className="fas fa-print"></i>
-                                        </button>
-                                        <button onClick={() => handleDelete(q.id)} className="text-red-600 hover:text-red-900" title="Eliminar">
-                                            <i className="fas fa-trash"></i>
-                                        </button>
+                                        {q.googleDocId && (
+                                            <a href={`https://docs.google.com/document/d/${q.googleDocId}/edit`} target="_blank" className="text-blue-600 hover:text-blue-900 mr-3"><i className="fas fa-link"></i></a>
+                                        )}
+                                        <button onClick={() => onPrint(q)} className="text-indigo-600 hover:text-indigo-900" title="Imprimir"><i className="fas fa-print"></i></button>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };

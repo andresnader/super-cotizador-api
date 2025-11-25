@@ -1,10 +1,19 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { initGapi, initGis, requestAccessToken, setAccessToken, getUserInfo } from '../services/googleAuth';
+=======
+
+import React, { useState } from 'react';
+import { signIn } from '../services/google';
+>>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (user: any) => void;
+  isGoogleReady: boolean;
+  error?: string | null;
 }
 
+<<<<<<< HEAD
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   console.log('Login component rendering');
   const [isInitializing, setIsInitializing] = useState(true);
@@ -61,10 +70,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     } catch (err) {
       console.error('Error requesting access token:', err);
       setError('Error al solicitar acceso. Por favor intenta de nuevo.');
+=======
+const Login: React.FC<LoginProps> = ({ onLogin, isGoogleReady, error }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setLocalError(null);
+    try {
+      const user = await signIn();
+      onLogin(user);
+    } catch (err: any) {
+      console.error("Login Failed", err);
+      setLocalError("Error al iniciar sesión. " + (err.message || err.error || ""));
+    } finally {
+      setIsLoading(false);
+>>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
     }
   };
 
   return (
+<<<<<<< HEAD
     <div className="fixed inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
         <div className="text-center mb-6">
@@ -121,6 +148,34 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </p>
             </div>
           </>
+=======
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Acceso al Cotizador</h2>
+        <p className="text-gray-600 mb-6">Inicia sesión con tu cuenta de Google para acceder a los datos en Drive.</p>
+        
+        {(error || localError) && (
+            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded text-sm">
+                {error || localError}
+            </div>
+        )}
+
+        <button 
+            onClick={handleGoogleLogin}
+            disabled={!isGoogleReady || isLoading}
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+        >
+            {isLoading ? (
+                <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+            ) : (
+                <i className="fab fa-google mr-3"></i>
+            )}
+            {isLoading ? 'Conectando...' : 'Iniciar Sesión con Google'}
+        </button>
+        
+        {!isGoogleReady && !error && (
+            <p className="text-xs text-gray-400 mt-4 animate-pulse">Cargando APIs de Google...</p>
+>>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
         )}
       </div>
     </div>
