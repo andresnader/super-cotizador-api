@@ -12,7 +12,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const [clients, setClients] = useState<Client[]>([]);
     const [form, setForm] = useState<Partial<Client>>({});
     const [isEditing, setIsEditing] = useState(false);
-    
+    const [loading, setLoading] = useState(true);
+
     // UI State
     const [showFormModal, setShowFormModal] = useState(false);
 
@@ -25,7 +26,18 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const [showQuotesModal, setShowQuotesModal] = useState(false);
 
     useEffect(() => {
-        setClients(getClients());
+        const loadClients = async () => {
+            try {
+                setLoading(true);
+                const data = await getClients();
+                setClients(data);
+            } catch (error) {
+                console.error('Error loading clients:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadClients();
     }, []);
 
     // Filtered Clients based on Search
@@ -42,21 +54,26 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        let newClients = [...clients];
-        if (isEditing && form.id) {
-            newClients = newClients.map(c => c.id === form.id ? form as Client : c);
-        } else {
-            const newClient = { ...form, id: `client_${Date.now()}` } as Client;
-            if (!newClient.code) newClient.code = newClient.name.substring(0, 3).toUpperCase();
-            newClients.push(newClient);
+        try {
+            let newClients = [...clients];
+            if (isEditing && form.id) {
+                newClients = newClients.map(c => c.id === form.id ? form as Client : c);
+            } else {
+                const newClient = { ...form, id: `client_${Date.now()}` } as Client;
+                if (!newClient.code) newClient.code = newClient.name.substring(0, 3).toUpperCase();
+                newClients.push(newClient);
+            }
+            setClients(newClients);
+            await saveClients(newClients);
+            setForm({});
+            setIsEditing(false);
+            setShowFormModal(false);
+        } catch (error) {
+            console.error('Error saving client:', error);
+            alert('Error al guardar el cliente');
         }
-        setClients(newClients);
-        saveClients(newClients);
-        setForm({});
-        setIsEditing(false);
-        setShowFormModal(false);
     };
 
     const handleEdit = (c: Client) => {
@@ -71,37 +88,54 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         setShowFormModal(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm("¿Eliminar cliente?")) {
-            const newClients = clients.filter(c => c.id !== id);
-            setClients(newClients);
-            saveClients(newClients);
+            try {
+                const newClients = clients.filter(c => c.id !== id);
+                setClients(newClients);
+                await saveClients(newClients);
+            } catch (error) {
+                console.error('Error deleting client:', error);
+                alert('Error al eliminar el cliente');
+            }
         }
     };
 
     // Client Quotes Logic
-    const handleViewQuotes = (client: Client) => {
-        const allQuotes = getQuotes();
-        const filtered = allQuotes.filter(q => q.client.id === client.id);
-        setClientQuotes(filtered.reverse()); // Show newest first
-        setSelectedClientForQuotes(client);
-        setShowQuotesModal(true);
-    };
-
-    const handleDeleteQuote = (quoteId: string) => {
-        if (confirm("¿Eliminar esta cotización del historial?")) {
-            const allQuotes = getQuotes();
-            const updatedAll = allQuotes.filter(q => q.id !== quoteId);
-            saveQuotes(updatedAll);
-            setClientQuotes(clientQuotes.filter(q => q.id !== quoteId));
+    const handleViewQuotes = async (client: Client) => {
+        try {
+            const allQuotes = await getQuotes();
+            const filtered = allQuotes.filter(q => q.client.id === client.id);
+            setClientQuotes(filtered.reverse()); // Show newest first
+            setSelectedClientForQuotes(client);
+            setShowQuotesModal(true);
+        } catch (error) {
+            console.error('Error loading quotes:', error);
         }
     };
 
-    const handleQuoteStatusChange = (quoteId: string, newStatus: Quote['status']) => {
-        const allQuotes = getQuotes();
-        const updatedAll = allQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q);
-        saveQuotes(updatedAll);
-        setClientQuotes(clientQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q));
+    const handleDeleteQuote = async (quoteId: string) => {
+        if (confirm("¿Eliminar esta cotización del historial?")) {
+            try {
+                const allQuotes = await getQuotes();
+                const updatedAll = allQuotes.filter(q => q.id !== quoteId);
+                await saveQuotes(updatedAll);
+                setClientQuotes(clientQuotes.filter(q => q.id !== quoteId));
+            } catch (error) {
+                console.error('Error deleting quote:', error);
+            }
+        }
+    };
+
+    const handleQuoteStatusChange = async (quoteId: string, newStatus: Quote['status']) => {
+        try {
+            const allQuotes = await getQuotes();
+            const updatedAll = allQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q);
+            await saveQuotes(updatedAll);
+            setClientQuotes(clientQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q));
+        } catch (error) {
+            console.error('Error updating quote status:', error);
+        }
     };
 
     const ClientForm = () => (
@@ -116,9 +150,9 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 <input name="phone" value={form.phone || ''} onChange={handleChange} placeholder="Teléfono" className="p-3 border rounded-lg w-full" />
             </div>
             <input name="address" value={form.address || ''} onChange={handleChange} placeholder="Dirección" className="p-3 border rounded-lg w-full" />
-            
+
             <div className="flex gap-3 mt-4">
-                <button type="button" onClick={() => { setShowFormModal(false); if(isModal) window.location.reload(); }} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+                <button type="button" onClick={() => { setShowFormModal(false); if (isModal) window.location.reload(); }} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
                 <button type="submit" className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
                     {isEditing ? 'Actualizar Cliente' : 'Guardar Cliente'}
                 </button>
@@ -136,13 +170,24 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         );
     }
 
+    if (loading) {
+        return (
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex justify-center items-center min-h-[400px]">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    <p className="mt-4 text-gray-600">Cargando clientes...</p>
+                </div>
+            </div>
+        );
+    }
+
     // Main View
     return (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 max-w-6xl mx-auto">
             {/* Header with Title and Add Button */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Gestión de Clientes</h2>
-                <button 
+                <button
                     onClick={openCreateModal}
                     className="w-full md:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center justify-center font-medium"
                 >
@@ -157,7 +202,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                     <ClientForm />
                 </div>
             </Modal>
-            
+
             {/* Search Bar - Styles matching Services.tsx */}
             <div className="mb-6 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -202,8 +247,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
 
                             {/* Right: Actions */}
                             <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                                <button 
-                                    onClick={() => handleViewQuotes(c)} 
+                                <button
+                                    onClick={() => handleViewQuotes(c)}
                                     className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition flex items-center"
                                 >
                                     <i className="fas fa-history mr-2"></i> Historial
@@ -227,14 +272,14 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6 pb-2 border-b">
                         <div>
-                             <h3 className="text-xl font-bold text-gray-800">Historial de Cotizaciones</h3>
-                             <p className="text-sm text-gray-500">Cliente: {selectedClientForQuotes?.name}</p>
+                            <h3 className="text-xl font-bold text-gray-800">Historial de Cotizaciones</h3>
+                            <p className="text-sm text-gray-500">Cliente: {selectedClientForQuotes?.name}</p>
                         </div>
                         <button onClick={() => setShowQuotesModal(false)} className="text-gray-400 hover:text-gray-600">
                             <i className="fas fa-times text-xl"></i>
                         </button>
                     </div>
-                    
+
                     {clientQuotes.length === 0 ? (
                         <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                             <i className="fas fa-file-invoice text-gray-300 text-4xl mb-3"></i>
@@ -259,8 +304,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                                             <td className="px-4 py-3 text-sm text-gray-600">{q.issueDate}</td>
                                             <td className="px-4 py-3 text-right text-sm font-bold text-gray-800">${q.total.toFixed(2)}</td>
                                             <td className="px-4 py-3 text-center">
-                                                <select 
-                                                    value={q.status} 
+                                                <select
+                                                    value={q.status}
                                                     onChange={(e) => handleQuoteStatusChange(q.id, e.target.value as any)}
                                                     className={`p-1.5 rounded-md text-xs font-medium border-0 ring-1 ring-inset cursor-pointer focus:ring-2
                                                         ${q.status === 'Aceptada' ? 'bg-green-50 text-green-700 ring-green-600/20' : ''}

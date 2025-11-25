@@ -12,23 +12,43 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [filter, setFilter] = useState<'all' | '30' | '90'>('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setQuotes(getQuotes());
+        const loadQuotes = async () => {
+            try {
+                setLoading(true);
+                const data = await getQuotes();
+                setQuotes(data);
+            } catch (error) {
+                console.error('Error loading quotes:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadQuotes();
     }, []);
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm("¿Eliminar cotización permanentemente?")) {
-            const updated = quotes.filter(q => q.id !== id);
-            setQuotes(updated);
-            saveQuotes(updated);
+            try {
+                const updated = quotes.filter(q => q.id !== id);
+                setQuotes(updated);
+                await saveQuotes(updated);
+            } catch (error) {
+                console.error('Error deleting quote:', error);
+            }
         }
     };
 
-    const handleStatusChange = (id: string, status: Quote['status']) => {
-        const updated = quotes.map(q => q.id === id ? { ...q, status } : q);
-        setQuotes(updated);
-        saveQuotes(updated);
+    const handleStatusChange = async (id: string, status: Quote['status']) => {
+        try {
+            const updated = quotes.map(q => q.id === id ? { ...q, status } : q);
+            setQuotes(updated);
+            await saveQuotes(updated);
+        } catch (error) {
+            console.error('Error updating status:', error);
+        }
     };
 
     // Combined Filter Logic
@@ -53,20 +73,31 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
         return passesDate && passesSearch;
     }).reverse();
 
+    if (loading) {
+        return (
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex justify-center items-center min-h-[400px]">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    <p className="mt-4 text-gray-600">Cargando historial...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Historial</h2>
-                
+
                 <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-center">
                     {/* Search Bar */}
                     <div className="relative w-full sm:w-64">
-                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i className="fas fa-search text-gray-400"></i>
                         </div>
-                        <input 
-                            type="text" 
-                            placeholder="Buscar cotización..." 
+                        <input
+                            type="text"
+                            placeholder="Buscar cotización..."
                             className="w-full pl-10 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -105,8 +136,8 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
                                     <td className="px-4 py-3">{q.issueDate}</td>
                                     <td className="px-4 py-3 text-right font-semibold">${q.total.toFixed(2)}</td>
                                     <td className="px-4 py-3 text-center">
-                                        <select 
-                                            value={q.status} 
+                                        <select
+                                            value={q.status}
                                             onChange={(e) => handleStatusChange(q.id, e.target.value as any)}
                                             className={`p-1 rounded text-xs border border-gray-300
                                                 ${q.status === 'Aceptada' ? 'bg-green-100 text-green-800' : ''}

@@ -11,7 +11,8 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
     const [services, setServices] = useState<Service[]>([]);
     const [form, setForm] = useState<Partial<Service>>({});
     const [isEditing, setIsEditing] = useState(false);
-    
+    const [loading, setLoading] = useState(true);
+
     // UI State
     const [showFormModal, setShowFormModal] = useState(false);
 
@@ -22,7 +23,18 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
     const [sortConfig, setSortConfig] = useState<{ key: keyof Service; direction: 'asc' | 'desc' } | null>(null);
 
     useEffect(() => {
-        setServices(getServices());
+        const loadServices = async () => {
+            try {
+                setLoading(true);
+                const data = await getServices();
+                setServices(data);
+            } catch (error) {
+                console.error('Error loading services:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadServices();
     }, []);
 
     // Filtered Services based on Search
@@ -50,7 +62,7 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
         const bValue = b[sortConfig.key];
 
         if (aValue === bValue) return 0;
-        
+
         // Handle nulls/undefined safely
         if (aValue === undefined || aValue === null) return 1;
         if (bValue === undefined || bValue === null) return -1;
@@ -66,7 +78,7 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
         if (!sortConfig || sortConfig.key !== key) {
             return <i className="fas fa-sort text-gray-300 ml-1"></i>;
         }
-        return sortConfig.direction === 'asc' 
+        return sortConfig.direction === 'asc'
             ? <i className="fas fa-sort-up text-indigo-600 ml-1"></i>
             : <i className="fas fa-sort-down text-indigo-600 ml-1"></i>;
     };
@@ -76,20 +88,25 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
         setForm({ ...form, [e.target.name]: val });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        let newServices = [...services];
-        if (isEditing && form.id) {
-            newServices = newServices.map(s => s.id === form.id ? form as Service : s);
-        } else {
-            const newService = { ...form, id: `service_${Date.now()}` } as Service;
-            newServices.push(newService);
+        try {
+            let newServices = [...services];
+            if (isEditing && form.id) {
+                newServices = newServices.map(s => s.id === form.id ? form as Service : s);
+            } else {
+                const newService = { ...form, id: `service_${Date.now()}` } as Service;
+                newServices.push(newService);
+            }
+            setServices(newServices);
+            await saveServices(newServices);
+            setForm({});
+            setIsEditing(false);
+            setShowFormModal(false);
+        } catch (error) {
+            console.error('Error saving service:', error);
+            alert('Error al guardar el servicio');
         }
-        setServices(newServices);
-        saveServices(newServices);
-        setForm({});
-        setIsEditing(false);
-        setShowFormModal(false);
     };
 
     const handleEdit = (s: Service) => {
@@ -104,34 +121,39 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
         setShowFormModal(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm("¿Eliminar servicio?")) {
-            const newServices = services.filter(s => s.id !== id);
-            setServices(newServices);
-            saveServices(newServices);
+            try {
+                const newServices = services.filter(s => s.id !== id);
+                setServices(newServices);
+                await saveServices(newServices);
+            } catch (error) {
+                console.error('Error deleting service:', error);
+                alert('Error al eliminar el servicio');
+            }
         }
     };
 
     const ServiceForm = () => (
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-3 gap-4">
-                 <div className="col-span-1">
+                <div className="col-span-1">
                     <input name="code" value={form.code || ''} onChange={handleChange} placeholder="Código *" required className="p-3 border rounded-lg w-full" />
-                 </div>
-                 <div className="col-span-2">
+                </div>
+                <div className="col-span-2">
                     <input name="name" value={form.name || ''} onChange={handleChange} placeholder="Nombre del Servicio *" required className="p-3 border rounded-lg w-full" />
-                 </div>
+                </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
                 <input name="price" type="number" step="0.01" value={form.price || ''} onChange={handleChange} placeholder="Precio ($) *" required className="p-3 border rounded-lg w-full" />
                 <input name="category" value={form.category || ''} onChange={handleChange} placeholder="Categoría (Ej: Hosting)" className="p-3 border rounded-lg w-full" />
             </div>
-            
+
             <textarea name="description" value={form.description || ''} onChange={handleChange} placeholder="Descripción detallada del servicio..." className="p-3 border rounded-lg w-full" rows={3} />
-            
+
             <div className="flex gap-3 mt-4">
-                <button type="button" onClick={() => { setShowFormModal(false); if(isModal) window.location.reload(); }} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+                <button type="button" onClick={() => { setShowFormModal(false); if (isModal) window.location.reload(); }} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
                 <button type="submit" className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
                     {isEditing ? 'Actualizar Servicio' : 'Guardar Servicio'}
                 </button>
@@ -141,9 +163,20 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
 
     if (isModal) {
         return (
-             <div className="bg-white p-4">
+            <div className="bg-white p-4">
                 <h2 className="text-xl font-bold mb-6 text-gray-800">Nuevo Servicio</h2>
                 <ServiceForm />
+            </div>
+        );
+    }
+
+    if (loading) {
+        return (
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex justify-center items-center min-h-[400px]">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    <p className="mt-4 text-gray-600">Cargando servicios...</p>
+                </div>
             </div>
         );
     }
@@ -152,14 +185,14 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Gestión de Servicios</h2>
-                <button 
+                <button
                     onClick={openCreateModal}
                     className="w-full md:w-auto bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center justify-center"
                 >
                     <i className="fas fa-plus mr-2"></i> Agregar Nuevo Servicio
                 </button>
             </div>
-            
+
             {/* Form Modal */}
             <Modal isOpen={showFormModal} onClose={() => setShowFormModal(false)}>
                 <div className="p-6">
@@ -186,19 +219,19 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
-                            <th 
+                            <th
                                 className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500 tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                                 onClick={() => handleSort('code')}
                             >
                                 Código {getSortIcon('code')}
                             </th>
-                            <th 
+                            <th
                                 className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500 tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                                 onClick={() => handleSort('name')}
                             >
                                 Nombre / Categoría {getSortIcon('name')}
                             </th>
-                            <th 
+                            <th
                                 className="px-6 py-4 text-right text-xs font-bold uppercase text-gray-500 tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                                 onClick={() => handleSort('price')}
                             >

@@ -60,8 +60,4 @@ export interface CompanySettings {
   typography: string;
 }
 
-export interface Contract {
-  quoteId: string;
-  text: string;
-  config: any; // Flexible config for the contract fields
-}
+
