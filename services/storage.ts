@@ -1,211 +1,160 @@
-import { Client, Service, Quote, CompanySettings } from '../types';
-import { SHEETS_CONFIG } from '../config/google';
 
-// Helper to convert sheet row to Client
-const rowToClient = (row: any[]): Client => ({
-    id: row[0] || `client_${Date.now()}`,
-    code: row[1] || '',
-    name: row[2] || '',
-    ruc: row[3] || '',
-    contact: row[4] || '',
-    phone: row[5] || '',
-    address: row[6] || '',
-    city: row[7] || ''
-});
+import { Client, Service, Quote, Contract, CompanySettings } from '../types';
 
-// Helper to convert Client to sheet row
-const clientToRow = (client: Client): any[] => [
-    client.id,
-    client.code,
-    client.name,
-    client.ruc,
-    client.contact,
-    client.phone,
-    client.address,
-    client.city
-];
-
-// Helper to convert sheet row to Service
-const rowToService = (row: any[]): Service => ({
-    id: row[0] || `service_${Date.now()}`,
-    code: row[1] || '',
-    name: row[2] || '',
-    description: row[3] || '',
-    price: parseFloat(row[4]) || 0,
-    category: row[5] || '',
-    cost: parseFloat(row[6]) || 0
-});
-
-// Helper to convert Service to sheet row
-const serviceToRow = (service: Service): any[] => [
-    service.id,
-    service.code,
-    service.name,
-    service.description,
-    service.price,
-    service.category,
-    service.cost
-];
-
-// Helper to convert sheet row to Quote
-const rowToQuote = (row: any[]): Quote => ({
-    id: row[0] || `quote_${Date.now()}`,
-    number: row[1] || '',
-    issueDate: row[2] || '',
-    validityDate: row[3] || '',
-    client: JSON.parse(row[4] || '{}'),
-    items: JSON.parse(row[5] || '[]'),
-    subtotal: parseFloat(row[6]) || 0,
-    iva: parseFloat(row[7]) || 0,
-    total: parseFloat(row[8]) || 0,
-    notes: row[9] || '',
-    status: (row[10] || 'Pendiente') as 'Pendiente' | 'Aceptada' | 'Rechazada',
-    companySettings: JSON.parse(row[11] || '{}')
-});
-
-// Helper to convert Quote to sheet row
-const quoteToRow = (quote: Quote): any[] => [
-    quote.id,
-    quote.number,
-    quote.issueDate,
-    quote.validityDate,
-    JSON.stringify(quote.client),
-    JSON.stringify(quote.items),
-    quote.subtotal,
-    quote.iva,
-    quote.total,
-    quote.notes,
-    quote.status,
-    JSON.stringify(quote.companySettings)
-];
-
-// Get Clients from Google Sheets
-export const getClients = async (): Promise<Client[]> => {
-    try {
-        const response = await window.gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: SHEETS_CONFIG.CLIENTS.SHEET_ID,
-            range: SHEETS_CONFIG.CLIENTS.RANGE,
-        });
-        const rows = response.result.values || [];
-        return rows.map(rowToClient);
-    } catch (error) {
-        console.error('Error fetching clients:', error);
-        return [];
-    }
-};
-
-// Save Clients to Google Sheets
-export const saveClients = async (clients: Client[]): Promise<void> => {
-    try {
-        const values = clients.map(clientToRow);
-        await window.gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: SHEETS_CONFIG.CLIENTS.SHEET_ID,
-            range: SHEETS_CONFIG.CLIENTS.RANGE,
-            valueInputOption: 'RAW',
-            resource: { values }
-        });
-    } catch (error) {
-        console.error('Error saving clients:', error);
-        throw error;
-    }
-};
-
-// Get Services from Google Sheets
-export const getServices = async (): Promise<Service[]> => {
-    try {
-        const response = await window.gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: SHEETS_CONFIG.SERVICES.SHEET_ID,
-            range: SHEETS_CONFIG.SERVICES.RANGE,
-        });
-        const rows = response.result.values || [];
-        return rows.map(rowToService);
-    } catch (error) {
-        console.error('Error fetching services:', error);
-        return [];
-    }
-};
-
-// Save Services to Google Sheets
-export const saveServices = async (services: Service[]): Promise<void> => {
-    try {
-        const values = services.map(serviceToRow);
-        await window.gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: SHEETS_CONFIG.SERVICES.SHEET_ID,
-            range: SHEETS_CONFIG.SERVICES.RANGE,
-            valueInputOption: 'RAW',
-            resource: { values }
-        });
-    } catch (error) {
-        console.error('Error saving services:', error);
-        throw error;
-    }
-};
-
-// Get Quotes from Google Sheets
-export const getQuotes = async (): Promise<Quote[]> => {
-    try {
-        const response = await window.gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: SHEETS_CONFIG.QUOTES.SHEET_ID,
-            range: SHEETS_CONFIG.QUOTES.RANGE,
-        });
-        const rows = response.result.values || [];
-        return rows.map(rowToQuote);
-    } catch (error) {
-        console.error('Error fetching quotes:', error);
-        return [];
-    }
-};
-
-// Save Quotes to Google Sheets
-export const saveQuotes = async (quotes: Quote[]): Promise<void> => {
-    try {
-        const values = quotes.map(quoteToRow);
-        await window.gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: SHEETS_CONFIG.QUOTES.SHEET_ID,
-            range: SHEETS_CONFIG.QUOTES.RANGE,
-            valueInputOption: 'RAW',
-            resource: { values }
-        });
-    } catch (error) {
-        console.error('Error saving quotes:', error);
-        throw error;
-    }
-};
-
-// Company Settings (still using localStorage as fallback)
 const defaultSettings: CompanySettings = {
-    name: 'Tu Empresa S.A.',
-    address: 'Tu Dirección, Guayaquil',
-    contact: 'tuemail@empresa.com',
-    ruc: '1234567890001',
-    repName: 'Andrés Nader',
-    repTitle: 'Gerente General',
-    logo: 'https://placehold.co/200x100/eef2ff/4f46e5?text=Tu+Logo',
-    primaryColor: '#1a202c',
-    accentColor: '#4f46e5',
-    website: '',
-    whatsapp: '',
-    typography: 'Inter, sans-serif'
+  name: 'Tu Empresa S.A.',
+  address: 'Tu Dirección, Guayaquil',
+  contact: 'tuemail@empresa.com',
+  ruc: '1234567890001',
+  repName: 'Andrés Nader',
+  repTitle: 'Gerente General',
+  logo: 'https://placehold.co/200x100/eef2ff/4f46e5?text=Tu+Logo',
+  primaryColor: '#1a202c',
+  accentColor: '#4f46e5',
+  website: '',
+  whatsapp: '',
+  typography: 'Inter, sans-serif'
 };
+
+// Synchronous helpers for internal use
+const _getClients = (): Client[] => JSON.parse(localStorage.getItem('clients') || '[]');
+const _saveClients = (data: Client[]) => localStorage.setItem('clients', JSON.stringify(data));
+
+const _getServices = (): Service[] => JSON.parse(localStorage.getItem('services') || '[]');
+const _saveServices = (data: Service[]) => localStorage.setItem('services', JSON.stringify(data));
+
+const _getQuotes = (): Quote[] => JSON.parse(localStorage.getItem('quotesHistory') || '[]');
+const _saveQuotes = (data: Quote[]) => localStorage.setItem('quotesHistory', JSON.stringify(data));
+
+const _getContracts = (): Contract[] => JSON.parse(localStorage.getItem('contracts') || '[]');
+const _saveContracts = (data: Contract[]) => localStorage.setItem('contracts', JSON.stringify(data));
+
+// --- Async Interface implementation for DataManager ---
+
+export const fetchClients = async (): Promise<Client[]> => {
+    return Promise.resolve(_getClients());
+};
+
+export const saveClient = async (client: Client): Promise<void> => {
+    const clients = _getClients();
+    if (client.id && clients.some(c => c.id === client.id)) {
+        const index = clients.findIndex(c => c.id === client.id);
+        clients[index] = { ...client, rowId: client.id }; // Use ID as rowId for local
+    } else {
+        client.id = client.id || `client_${Date.now()}`;
+        client.rowId = client.id;
+        clients.push(client);
+    }
+    _saveClients(clients);
+    return Promise.resolve();
+};
+
+export const deleteClient = async (rowId: any): Promise<void> => {
+    const clients = _getClients();
+    const newClients = clients.filter(c => c.id !== rowId); // For local, rowId is the ID
+    _saveClients(newClients);
+    return Promise.resolve();
+};
+
+export const fetchServices = async (): Promise<Service[]> => {
+    return Promise.resolve(_getServices());
+};
+
+export const saveService = async (service: Service): Promise<void> => {
+    const services = _getServices();
+    if (service.id && services.some(s => s.id === service.id)) {
+        const index = services.findIndex(s => s.id === service.id);
+        services[index] = { ...service, rowId: service.id };
+    } else {
+        service.id = service.id || `service_${Date.now()}`;
+        service.rowId = service.id;
+        services.push(service);
+    }
+    _saveServices(services);
+    return Promise.resolve();
+};
+
+export const deleteService = async (rowId: any): Promise<void> => {
+    const services = _getServices();
+    const newServices = services.filter(s => s.id !== rowId);
+    _saveServices(newServices);
+    return Promise.resolve();
+};
+
+export const fetchQuotes = async (): Promise<Quote[]> => {
+    return Promise.resolve(_getQuotes());
+};
+
+export const saveQuote = async (quote: Quote): Promise<void> => {
+    const quotes = _getQuotes();
+    // Local quotes usually are immutable history, but we allow status updates
+    const index = quotes.findIndex(q => q.id === quote.id);
+    if (index >= 0) {
+        quotes[index] = { ...quote, rowId: quote.id };
+    } else {
+        quote.rowId = quote.id;
+        quotes.push(quote);
+    }
+    _saveQuotes(quotes);
+    return Promise.resolve();
+};
+
+export const updateQuoteStatus = async (rowId: any, status: string): Promise<void> => {
+    const quotes = _getQuotes();
+    const index = quotes.findIndex(q => q.id === rowId);
+    if (index >= 0) {
+        quotes[index].status = status as any;
+        _saveQuotes(quotes);
+    }
+    return Promise.resolve();
+};
+
+// --- Settings & Utils ---
 
 export const getCompanySettings = (): CompanySettings => {
-    const stored = localStorage.getItem('companySettings');
-    return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
+  const stored = localStorage.getItem('companySettings');
+  return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
 };
+export const saveCompanySettings = (data: CompanySettings) => localStorage.setItem('companySettings', JSON.stringify(data));
 
-export const saveCompanySettings = (data: CompanySettings) => {
-    localStorage.setItem('companySettings', JSON.stringify(data));
-};
-
-// Quote Counter (still using localStorage)
 export const getQuoteCounter = (): number => parseInt(localStorage.getItem('quoteCounter') || '1');
 export const incrementQuoteCounter = () => {
-    const current = getQuoteCounter();
-    localStorage.setItem('quoteCounter', (current + 1).toString());
-    return current + 1;
+  const current = getQuoteCounter();
+  localStorage.setItem('quoteCounter', (current + 1).toString());
+  return current + 1;
 };
 
-// Utility functions
+// Full backup/restore
+export const exportData = () => {
+    return JSON.stringify({
+        __ameizin_version: 'v1.0',
+        clients: _getClients(),
+        services: _getServices(),
+        quotesHistory: _getQuotes(),
+        contracts: _getContracts(),
+        quoteCounter: getQuoteCounter(),
+        companySettings: getCompanySettings()
+    }, null, 2);
+}
+
+export const importData = (jsonStr: string) => {
+    try {
+        const data = JSON.parse(jsonStr);
+        if (data.__ameizin_version !== 'v1.0') throw new Error("Invalid version");
+        _saveClients(data.clients || []);
+        _saveServices(data.services || []);
+        _saveQuotes(data.quotesHistory || []);
+        _saveContracts(data.contracts || []);
+        saveCompanySettings(data.companySettings || defaultSettings);
+        localStorage.setItem('quoteCounter', (data.quoteCounter || 1).toString());
+        return true;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
+// Utilidades CSV
 export const downloadFile = (filename: string, text: string) => {
     const element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
@@ -215,3 +164,52 @@ export const downloadFile = (filename: string, text: string) => {
     element.click();
     document.body.removeChild(element);
 };
+
+export const parseCSV = (csvText: string) => {
+    const rows = csvText.trim().split('\n').map(row => row.trim()).filter(row => row.length > 0);
+    if (rows.length === 0) return { headers: [], data: [] };
+
+    const headers = rows[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+    const data: any[] = [];
+    const separator = ',';
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const rowData: any = {};
+        let currentValue = '';
+        let inQuotes = false;
+        let colIndex = 0;
+
+        for (let j = 0; j < row.length; j++) {
+            const char = row[j];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === separator && !inQuotes) {
+                if (colIndex < headers.length) {
+                    rowData[headers[colIndex]] = currentValue.trim().replace(/^"|"$/g, '');
+                }
+                currentValue = '';
+                colIndex++;
+            } else {
+                currentValue += char;
+            }
+        }
+        if (colIndex < headers.length) {
+            rowData[headers[colIndex]] = currentValue.trim().replace(/^"|"$/g, '');
+        }
+        if (Object.keys(rowData).length > 0) {
+            data.push(rowData);
+        }
+    }
+    return { headers, data };
+};
+
+// Export for DataManager usage
+export const getClients = _getClients;
+export const saveClients = _saveClients;
+export const getServices = _getServices;
+export const saveServices = _saveServices;
+export const getQuotes = _getQuotes;
+export const saveQuotes = _saveQuotes;
+export const getContracts = _getContracts;
+export const saveContracts = _saveContracts;

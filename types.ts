@@ -1,7 +1,25 @@
 
+export type AuthMode = 'google' | 'local' | null;
+
+export interface DataService {
+  fetchClients: () => Promise<Client[]>;
+  saveClient: (client: Client) => Promise<void>;
+  deleteClient: (rowId: any) => Promise<void>; // rowId can be string (ID) for local or number for sheets
+  
+  fetchServices: () => Promise<Service[]>;
+  saveService: (service: Service) => Promise<void>;
+  deleteService: (rowId: any) => Promise<void>;
+
+  fetchQuotes: () => Promise<Quote[]>;
+  saveQuote: (quote: Quote) => Promise<void>;
+  updateQuoteStatus: (rowId: any, status: string) => Promise<void>;
+  
+  createQuoteDoc?: (quote: Quote) => Promise<string>; // Optional for local
+}
+
 export interface Client {
   id: string;
-  rowId?: number; // For Google Sheets updates
+  rowId?: any; // number for sheets, string/undefined for local
   code: string;
   name: string;
   ruc: string;
@@ -13,7 +31,7 @@ export interface Client {
 
 export interface Service {
   id: string;
-  rowId?: number; // For Google Sheets updates
+  rowId?: any;
   code: string;
   name: string;
   description: string;
@@ -35,7 +53,7 @@ export interface QuoteItem {
 
 export interface Quote {
   id: string;
-  rowId?: number; // For Google Sheets updates
+  rowId?: any;
   number: string;
   issueDate: string;
   validityDate: string;
@@ -46,7 +64,7 @@ export interface Quote {
   total: number;
   notes: string;
   status: 'Pendiente' | 'Aceptada' | 'Rechazada';
-  googleDocId?: string | null; // Link to Google Doc
+  googleDocId?: string | null;
   companySettings: CompanySettings;
 }
 
@@ -65,12 +83,8 @@ export interface CompanySettings {
   typography: string;
 }
 
-<<<<<<< HEAD
-
-=======
 export interface Contract {
   quoteId: string;
   text: string;
   config: any;
 }
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd

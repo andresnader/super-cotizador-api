@@ -1,76 +1,14 @@
-<<<<<<< HEAD
-import React, { useState, useEffect } from 'react';
-import { initGapi, initGis, requestAccessToken, setAccessToken, getUserInfo } from '../services/googleAuth';
-=======
 
 import React, { useState } from 'react';
 import { signIn } from '../services/google';
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
+import { AuthMode } from '../types';
 
 interface LoginProps {
-  onLogin: (user: any) => void;
+  onLogin: (user: any, mode: AuthMode) => void;
   isGoogleReady: boolean;
   error?: string | null;
 }
 
-<<<<<<< HEAD
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  console.log('Login component rendering');
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    console.log('Login useEffect running');
-    const initialize = async () => {
-      try {
-        console.log('Initializing Google APIs...');
-        // Initialize Google APIs
-        await initGapi();
-        console.log('GAPI initialized');
-        await initGis(handleTokenResponse);
-        console.log('GIS initialized');
-        setIsInitializing(false);
-      } catch (err) {
-        console.error('Failed to initialize Google APIs:', err);
-        setError('Error al inicializar Google APIs. Por favor recarga la página.');
-        setIsInitializing(false);
-      }
-    };
-
-    initialize();
-  }, []);
-
-  const handleTokenResponse = async (tokenResponse: any) => {
-    if (tokenResponse.error) {
-      setError('Error de autenticación: ' + tokenResponse.error);
-      return;
-    }
-
-    try {
-      // Set the access token
-      setAccessToken(tokenResponse);
-
-      // Get user info
-      const userInfo = await getUserInfo();
-      setUserEmail(userInfo.email);
-
-      // Call the onLogin callback
-      onLogin();
-    } catch (err) {
-      console.error('Error during authentication:', err);
-      setError('Error al obtener información del usuario.');
-    }
-  };
-
-  const handleGoogleLogin = () => {
-    setError(null);
-    try {
-      requestAccessToken('consent');
-    } catch (err) {
-      console.error('Error requesting access token:', err);
-      setError('Error al solicitar acceso. Por favor intenta de nuevo.');
-=======
 const Login: React.FC<LoginProps> = ({ onLogin, isGoogleReady, error }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -80,103 +18,90 @@ const Login: React.FC<LoginProps> = ({ onLogin, isGoogleReady, error }) => {
     setLocalError(null);
     try {
       const user = await signIn();
-      onLogin(user);
+      onLogin(user, 'google');
     } catch (err: any) {
       console.error("Login Failed", err);
-      setLocalError("Error al iniciar sesión. " + (err.message || err.error || ""));
+      setLocalError("Error al iniciar sesión con Google. " + (err.message || err.error || ""));
     } finally {
       setIsLoading(false);
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
     }
   };
 
+  const handleLocalLogin = () => {
+      // Mock user for local mode
+      const localUser = { name: 'Usuario Local', email: 'local@device', picture: '' };
+      onLogin(localUser, 'local');
+  };
+
   return (
-<<<<<<< HEAD
-    <div className="fixed inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">QuoteTool Pro</h1>
-          <p className="text-gray-600">Sistema de Cotizaciones</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
+      <div className="bg-white p-8 md:p-12 rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col md:flex-row overflow-hidden">
+        
+        {/* Left Side: Intro */}
+        <div className="md:w-1/2 md:pr-8 flex flex-col justify-center border-b md:border-b-0 md:border-r border-gray-200 pb-8 md:pb-0 mb-8 md:mb-0">
+            <h1 className="text-4xl font-extrabold text-gray-800 mb-4">Bienvenido a <br/><span className="text-indigo-600">QuoteTool Pro</span></h1>
+            <p className="text-gray-600 mb-6 text-lg leading-relaxed">
+                La herramienta integral para gestionar tus cotizaciones, clientes y servicios.
+            </p>
+            <p className="text-gray-500 text-sm">
+                Elige cómo deseas trabajar hoy. Puedes sincronizar tus datos en la nube o trabajar de forma privada en este dispositivo.
+            </p>
+            {(error || localError) && (
+                <div className="mt-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                    <i className="fas fa-exclamation-circle mr-2"></i>
+                    {error || localError}
+                </div>
+            )}
         </div>
 
-        {isInitializing ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            <p className="mt-4 text-gray-600">Inicializando...</p>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6">
-              <p className="text-sm text-gray-600 text-center mb-4">
-                Inicia sesión con tu cuenta de Google para acceder al sistema
-              </p>
+        {/* Right Side: Options */}
+        <div className="md:w-1/2 md:pl-8 flex flex-col justify-center space-y-6">
+            
+            {/* Option 1: Google */}
+            <div className="group relative">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <button 
+                    onClick={handleGoogleLogin}
+                    disabled={!isGoogleReady || isLoading}
+                    className="relative w-full bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all text-left disabled:opacity-70 disabled:cursor-not-allowed flex items-center"
+                >
+                    <div className="bg-blue-50 p-3 rounded-full mr-4">
+                        {isLoading ? (
+                             <span className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
+                        ) : (
+                            <i className="fab fa-google text-2xl text-blue-600"></i>
+                        )}
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-gray-800 text-lg">Modo Nube (Google)</h3>
+                        <p className="text-sm text-gray-500">Sincroniza con Drive, Sheets y Docs. Ideal para equipos.</p>
+                        {!isGoogleReady && !error && <p className="text-xs text-orange-500 mt-1">Cargando servicios...</p>}
+                    </div>
+                </button>
             </div>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
-            {userEmail && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-700 text-sm">
-                  <i className="fas fa-check-circle mr-2"></i>
-                  Conectado como: {userEmail}
-                </p>
-              </div>
-            )}
-
-            <button
-              onClick={handleGoogleLogin}
-              disabled={isInitializing}
-              className="w-full bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition duration-300 font-semibold flex items-center justify-center shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              Iniciar sesión con Google
-            </button>
-
-            <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500">
-                <i className="fas fa-shield-alt mr-1"></i>
-                Conexión segura con Google OAuth 2.0
-              </p>
+            {/* Option 2: Local */}
+            <div className="group relative">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-gray-400 to-gray-600 rounded-lg blur opacity-10 group-hover:opacity-30 transition duration-1000 group-hover:duration-200"></div>
+                <button 
+                    onClick={handleLocalLogin}
+                    className="relative w-full bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all text-left flex items-center"
+                >
+                    <div className="bg-gray-100 p-3 rounded-full mr-4">
+                        <i className="fas fa-laptop text-2xl text-gray-600"></i>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-gray-800 text-lg">Modo Local</h3>
+                        <p className="text-sm text-gray-500">Datos privados en este dispositivo. Sin conexión a internet.</p>
+                    </div>
+                </button>
             </div>
-          </>
-=======
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Acceso al Cotizador</h2>
-        <p className="text-gray-600 mb-6">Inicia sesión con tu cuenta de Google para acceder a los datos en Drive.</p>
-        
-        {(error || localError) && (
-            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded text-sm">
-                {error || localError}
-            </div>
-        )}
 
-        <button 
-            onClick={handleGoogleLogin}
-            disabled={!isGoogleReady || isLoading}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-        >
-            {isLoading ? (
-                <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
-            ) : (
-                <i className="fab fa-google mr-3"></i>
-            )}
-            {isLoading ? 'Conectando...' : 'Iniciar Sesión con Google'}
-        </button>
-        
-        {!isGoogleReady && !error && (
-            <p className="text-xs text-gray-400 mt-4 animate-pulse">Cargando APIs de Google...</p>
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
-        )}
+        </div>
+      </div>
+      
+      <div className="fixed bottom-4 text-center text-gray-400 text-xs">
+        &copy; {new Date().getFullYear()} Ameizin Digital Solutions
       </div>
     </div>
   );

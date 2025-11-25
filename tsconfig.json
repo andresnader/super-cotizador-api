@@ -9,17 +9,6 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-<<<<<<< HEAD
-    "noEmit": true
-  },
-  "include": [
-    "./**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
-=======
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -33,5 +22,4 @@
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
 }

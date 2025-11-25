@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Client, Quote } from '../types';
-import { fetchClients, saveClient, deleteClient, fetchQuotes, updateQuoteStatus } from '../services/google';
+import { dataManager } from '../services/dataManager';
 import Modal from './Modal';
 
 interface ClientsProps {
@@ -14,13 +14,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState<Partial<Client>>({});
     const [isEditing, setIsEditing] = useState(false);
-<<<<<<< HEAD
-    const [loading, setLoading] = useState(true);
-
-    // UI State
-=======
     
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
     const [showFormModal, setShowFormModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -29,10 +23,13 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const [showQuotesModal, setShowQuotesModal] = useState(false);
     const [quotesLoading, setQuotesLoading] = useState(false);
 
+    const mode = dataManager.getMode();
+    const sourceLabel = mode === 'google' ? 'Google Sheets' : 'Local';
+
     const loadData = async () => {
         setLoading(true);
         try {
-            const data = await fetchClients();
+            const data = await dataManager.fetchClients();
             setClients(data);
         } catch (e) {
             console.error(e);
@@ -43,22 +40,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     };
 
     useEffect(() => {
-<<<<<<< HEAD
-        const loadClients = async () => {
-            try {
-                setLoading(true);
-                const data = await getClients();
-                setClients(data);
-            } catch (error) {
-                console.error('Error loading clients:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadClients();
-=======
         loadData();
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
     }, []);
 
     const filteredClients = clients.filter(c => {
@@ -76,26 +58,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-<<<<<<< HEAD
-            let newClients = [...clients];
-            if (isEditing && form.id) {
-                newClients = newClients.map(c => c.id === form.id ? form as Client : c);
-            } else {
-                const newClient = { ...form, id: `client_${Date.now()}` } as Client;
-                if (!newClient.code) newClient.code = newClient.name.substring(0, 3).toUpperCase();
-                newClients.push(newClient);
-            }
-            setClients(newClients);
-            await saveClients(newClients);
-            setForm({});
-            setIsEditing(false);
-            setShowFormModal(false);
-        } catch (error) {
-            console.error('Error saving client:', error);
-            alert('Error al guardar el cliente');
-=======
             const newClient = { ...form } as Client;
-            await saveClient(newClient);
+            await dataManager.saveClient(newClient);
             await loadData(); // Reload list
             setForm({});
             setIsEditing(false);
@@ -103,7 +67,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         } catch (e) {
             console.error(e);
             alert("Error guardando cliente");
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
         }
     };
 
@@ -119,73 +82,25 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         setShowFormModal(true);
     };
 
-<<<<<<< HEAD
-    const handleDelete = async (id: string) => {
-        if (confirm("¿Eliminar cliente?")) {
-            try {
-                const newClients = clients.filter(c => c.id !== id);
-                setClients(newClients);
-                await saveClients(newClients);
-            } catch (error) {
-                console.error('Error deleting client:', error);
-                alert('Error al eliminar el cliente');
-=======
-    const handleDelete = async (rowId?: number) => {
+    const handleDelete = async (rowId?: any) => {
         if (!rowId) return;
-        if (confirm("¿Eliminar cliente? Esto limpiará la fila en Google Sheets.")) {
+        if (confirm(`¿Eliminar cliente? Esta acción es permanente en ${sourceLabel}.`)) {
             try {
-                await deleteClient(rowId);
+                await dataManager.deleteClient(rowId);
                 await loadData();
             } catch (e) {
                 console.error(e);
                 alert("Error eliminando cliente");
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
             }
         }
     };
 
-<<<<<<< HEAD
-    // Client Quotes Logic
-    const handleViewQuotes = async (client: Client) => {
-        try {
-            const allQuotes = await getQuotes();
-            const filtered = allQuotes.filter(q => q.client.id === client.id);
-            setClientQuotes(filtered.reverse()); // Show newest first
-            setSelectedClientForQuotes(client);
-            setShowQuotesModal(true);
-        } catch (error) {
-            console.error('Error loading quotes:', error);
-        }
-    };
-
-    const handleDeleteQuote = async (quoteId: string) => {
-        if (confirm("¿Eliminar esta cotización del historial?")) {
-            try {
-                const allQuotes = await getQuotes();
-                const updatedAll = allQuotes.filter(q => q.id !== quoteId);
-                await saveQuotes(updatedAll);
-                setClientQuotes(clientQuotes.filter(q => q.id !== quoteId));
-            } catch (error) {
-                console.error('Error deleting quote:', error);
-            }
-        }
-    };
-
-    const handleQuoteStatusChange = async (quoteId: string, newStatus: Quote['status']) => {
-        try {
-            const allQuotes = await getQuotes();
-            const updatedAll = allQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q);
-            await saveQuotes(updatedAll);
-            setClientQuotes(clientQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q));
-        } catch (error) {
-            console.error('Error updating quote status:', error);
-=======
     const handleViewQuotes = async (client: Client) => {
         setSelectedClientForQuotes(client);
         setShowQuotesModal(true);
         setQuotesLoading(true);
         try {
-            const allQuotes = await fetchQuotes();
+            const allQuotes = await dataManager.fetchQuotes();
             const filtered = allQuotes.filter(q => q.client.ruc === client.ruc); // Match by RUC as reliable ID
             setClientQuotes(filtered.reverse());
         } catch (e) {
@@ -198,13 +113,12 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const handleQuoteStatusChange = async (quote: Quote, newStatus: Quote['status']) => {
         if (!quote.rowId) return;
         try {
-            await updateQuoteStatus(quote.rowId, newStatus);
+            await dataManager.updateQuoteStatus(quote.rowId, newStatus);
             // Update local state
             setClientQuotes(clientQuotes.map(q => q.id === quote.id ? { ...q, status: newStatus } : q));
         } catch(e) {
             console.error(e);
             alert("Error actualizando estado");
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
         }
     };
 
@@ -218,18 +132,11 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
             <div className="grid grid-cols-2 gap-4">
                 <input name="phone" value={form.phone || ''} onChange={handleChange} placeholder="Teléfono" className="p-3 border rounded-lg w-full" />
             </div>
-<<<<<<< HEAD
-            <input name="address" value={form.address || ''} onChange={handleChange} placeholder="Dirección" className="p-3 border rounded-lg w-full" />
-
-            <div className="flex gap-3 mt-4">
-                <button type="button" onClick={() => { setShowFormModal(false); if (isModal) window.location.reload(); }} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-=======
             
             <div className="flex gap-3 mt-4">
                 <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
                 <button type="submit" className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
-                    {isEditing ? 'Actualizar (Google Sheets)' : 'Guardar (Google Sheets)'}
+                    {isEditing ? `Actualizar (${sourceLabel})` : `Guardar (${sourceLabel})`}
                 </button>
             </div>
         </form>
@@ -244,31 +151,11 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         );
     }
 
-<<<<<<< HEAD
-    if (loading) {
-        return (
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex justify-center items-center min-h-[400px]">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                    <p className="mt-4 text-gray-600">Cargando clientes...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // Main View
-=======
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
     return (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-<<<<<<< HEAD
-                <h2 className="text-2xl font-bold text-gray-800">Gestión de Clientes</h2>
-                <button
-=======
-                <h2 className="text-2xl font-bold text-gray-800">Gestión de Clientes (Drive)</h2>
+                <h2 className="text-2xl font-bold text-gray-800">Gestión de Clientes ({sourceLabel})</h2>
                 <button 
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
                     onClick={openCreateModal}
                     className="w-full md:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center justify-center font-medium"
                 >
@@ -282,12 +169,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                     <ClientForm />
                 </div>
             </Modal>
-<<<<<<< HEAD
-
-            {/* Search Bar - Styles matching Services.tsx */}
-=======
             
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
             <div className="mb-6 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i className="fas fa-search text-gray-400"></i>
@@ -301,61 +183,13 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 />
             </div>
 
-<<<<<<< HEAD
-            {/* Client List - Cards View */}
-            <div className="space-y-4">
-                {filteredClients.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        No se encontraron clientes.
-                    </div>
-                ) : (
-                    filteredClients.map(c => (
-                        <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            {/* Left: Name and Contact */}
-                            <div className="flex-1">
-                                <h3 className="text-lg font-bold text-gray-900 leading-tight">{c.name}</h3>
-                                <div className="text-sm text-gray-500 mt-1">
-                                    {c.contact && <span>{c.contact}</span>}
-                                    {c.phone && <span className="ml-2 text-gray-400">• {c.phone}</span>}
-                                </div>
-                            </div>
-
-                            {/* Center: RUC and Address */}
-                            <div className="flex-1 md:text-right md:pr-8">
-                                <div className="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded text-sm font-mono font-medium mb-1">
-                                    {c.ruc}
-                                </div>
-                                <div className="text-sm text-gray-500 uppercase tracking-wide">
-                                    {c.address || 'SIN DIRECCIÓN'}
-                                </div>
-                            </div>
-
-                            {/* Right: Actions */}
-                            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                                <button
-                                    onClick={() => handleViewQuotes(c)}
-                                    className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition flex items-center"
-                                >
-                                    <i className="fas fa-history mr-2"></i> Historial
-                                </button>
-                                <div className="flex gap-1">
-                                    <button onClick={() => handleEdit(c)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition" title="Editar">
-                                        <i className="fas fa-pencil-alt"></i>
-                                    </button>
-                                    <button onClick={() => handleDelete(c.id)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition" title="Eliminar">
-                                        <i className="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-=======
             {loading ? (
-                <div className="text-center py-12 text-gray-500">Cargando desde Google Sheets...</div>
+                <div className="text-center py-12 text-gray-500">Cargando datos...</div>
             ) : (
                 <div className="space-y-4">
                     {filteredClients.length === 0 ? (
                         <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                             No se encontraron clientes.
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
                         </div>
                     ) : (
                         filteredClients.map(c => (
@@ -390,23 +224,13 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6 pb-2 border-b">
                         <div>
-<<<<<<< HEAD
-                            <h3 className="text-xl font-bold text-gray-800">Historial de Cotizaciones</h3>
-                            <p className="text-sm text-gray-500">Cliente: {selectedClientForQuotes?.name}</p>
-=======
                              <h3 className="text-xl font-bold text-gray-800">Historial</h3>
                              <p className="text-sm text-gray-500">Cliente: {selectedClientForQuotes?.name}</p>
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
                         </div>
                         <button onClick={() => setShowQuotesModal(false)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                     </div>
-<<<<<<< HEAD
-
-                    {clientQuotes.length === 0 ? (
-=======
                     
                     {quotesLoading ? <p className="text-center py-4">Cargando...</p> : clientQuotes.length === 0 ? (
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
                         <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                             <p className="text-gray-500">Sin cotizaciones.</p>
                         </div>
@@ -429,21 +253,10 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                                             <td className="px-4 py-3 text-sm text-gray-600">{q.issueDate}</td>
                                             <td className="px-4 py-3 text-right text-sm font-bold text-gray-800">${q.total.toFixed(2)}</td>
                                             <td className="px-4 py-3 text-center">
-<<<<<<< HEAD
-                                                <select
-                                                    value={q.status}
-                                                    onChange={(e) => handleQuoteStatusChange(q.id, e.target.value as any)}
-                                                    className={`p-1.5 rounded-md text-xs font-medium border-0 ring-1 ring-inset cursor-pointer focus:ring-2
-                                                        ${q.status === 'Aceptada' ? 'bg-green-50 text-green-700 ring-green-600/20' : ''}
-                                                        ${q.status === 'Rechazada' ? 'bg-red-50 text-red-700 ring-red-600/20' : ''}
-                                                        ${q.status === 'Pendiente' ? 'bg-yellow-50 text-yellow-800 ring-yellow-600/20' : ''}
-                                                    `}
-=======
                                                 <select 
                                                     value={q.status} 
                                                     onChange={(e) => handleQuoteStatusChange(q, e.target.value as any)}
                                                     className="p-1.5 rounded-md text-xs font-medium border-0 ring-1 ring-inset cursor-pointer"
->>>>>>> 7b1acce5b3bf139c54b3f0694a52a3715f24cecd
                                                 >
                                                     <option value="Pendiente">Pendiente</option>
                                                     <option value="Aceptada">Aceptada</option>
