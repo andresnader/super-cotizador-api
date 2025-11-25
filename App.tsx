@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { CompanySettings, Quote } from './types';
 import { getCompanySettings } from './services/storage';
+import { initializeGoogleApi, signOut } from './services/google';
 import Login from './components/Login';
 import Layout from './components/Layout';
 import QuoteBuilder from './components/QuoteBuilder';
@@ -13,29 +15,45 @@ import Modal from './components/Modal';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isGoogleReady, setIsGoogleReady] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState('cotizador');
   const [companySettings, setCompanySettings] = useState<CompanySettings>(getCompanySettings());
   
-  // Estado para la previsualización
   const [previewQuote, setPreviewQuote] = useState<Quote | null>(null);
 
-  // Styling based on settings
+  // Init Google API
+  useEffect(() => {
+    const init = async () => {
+        try {
+            await initializeGoogleApi();
+            setIsGoogleReady(true);
+        } catch (err: any) {
+            console.error("Google API Init Error", err);
+            setAuthError("Error cargando servicios de Google. Recarga la página.");
+        }
+    };
+    init();
+  }, []);
+
   useEffect(() => {
     document.body.style.fontFamily = companySettings.typography;
   }, [companySettings]);
 
-  useEffect(() => {
-    const logged = sessionStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(logged);
-  }, []);
-
-  const handleLogin = () => {
-    sessionStorage.setItem('isLoggedIn', 'true');
+  const handleLogin = (user: any) => {
+    setUserProfile(user);
     setIsLoggedIn(true);
   };
 
+  const handleLogout = () => {
+      signOut();
+      setIsLoggedIn(false);
+      setUserProfile(null);
+  };
+
   const handlePrintRequest = (quote: Quote) => {
-    // En lugar de imprimir directamente, abrimos el modal de previsualización
     setPreviewQuote(quote);
   };
 
@@ -44,20 +62,19 @@ const App: React.FC = () => {
   };
 
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+    return <Login onLogin={handleLogin} isGoogleReady={isGoogleReady} error={authError} />;
   }
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Modal de Previsualización e Impresión */}
+      {/* Modal de Previsualización */}
       <Modal 
         isOpen={!!previewQuote} 
         onClose={() => setPreviewQuote(null)} 
         maxWidth="max-w-5xl"
-        hideCloseButton={true} // Ocultar la X por defecto para usar la cabecera personalizada
+        hideCloseButton={true}
       >
         <div className="flex flex-col h-full bg-gray-50">
-            {/* Cabecera de Acciones - Oculta al imprimir */}
             <div className="flex justify-between items-center px-4 md:px-6 py-4 bg-white border-b border-gray-200 no-print sticky top-0 z-10 print:hidden">
                 <div>
                     <h3 className="text-lg md:text-xl font-bold text-gray-800">Vista Previa</h3>
@@ -79,7 +96,6 @@ const App: React.FC = () => {
                 </div>
             </div>
             
-            {/* Contenedor con ID específico para CSS @media print */}
             <div className="flex-1 overflow-y-auto p-2 md:p-8 print:p-0 print:overflow-visible">
                 <div id="print-section" className="bg-white p-4 md:p-12 border border-gray-200 shadow-sm mx-auto w-full max-w-4xl print:border-none print:shadow-none print:w-full print:max-w-none print:p-0">
                     {previewQuote && <PrintTemplate quote={previewQuote} settings={companySettings} />}
@@ -88,12 +104,13 @@ const App: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Main App - Oculta al imprimir */}
       <div className="no-print flex-grow">
         <Layout 
           activeTab={activeTab} 
           onTabChange={setActiveTab} 
           settings={companySettings}
+          userProfile={userProfile}
+          onLogout={handleLogout}
         >
           {activeTab === 'cotizador' && <QuoteBuilder settings={companySettings} onPrint={handlePrintRequest} />}
           {activeTab === 'dashboard' && <Dashboard settings={companySettings} />}
@@ -117,7 +134,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
            <img src={logoSrc} alt="Logo" className="max-h-20 md:max-h-24 w-auto object-contain" />
         </div>
         <div className="w-full md:w-1/2 text-center md:text-right">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ color: settings.primaryColor }}>COTIZACIÓN</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-indigo-700" style={{ color: settings.primaryColor }}>COTIZACIÓN</h1>
           <p className="text-gray-600 mt-2 text-base md:text-lg">Nº: <span className="font-mono font-medium text-gray-800">{quote.number}</span></p>
         </div>
       </header>
@@ -145,18 +162,18 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100 print:bg-white print:border-gray-200 gap-2">
-          <div>
+          <div className="w-full md:w-auto flex justify-between md:block">
             <span className="text-gray-500 text-xs uppercase font-bold mr-2">Fecha de Emisión:</span>
             <span className="font-medium text-gray-800">{quote.issueDate}</span>
           </div>
-          <div>
+          <div className="w-full md:w-auto flex justify-between md:block">
             <span className="text-gray-500 text-xs uppercase font-bold mr-2">Válida Hasta:</span>
             <span className="font-medium text-gray-800">{quote.validityDate}</span>
           </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full mb-10 border-collapse min-w-[500px]">
+        <table className="w-full mb-10 border-collapse min-w-full md:min-w-[600px]">
             <thead>
             <tr style={{ backgroundColor: settings.primaryColor, color: 'white', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
                 <th className="py-3 px-4 text-left font-semibold rounded-tl-lg text-xs md:text-sm uppercase tracking-wide">Descripción</th>
@@ -207,7 +224,7 @@ const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ 
         </div>
       )}
 
-      <footer className="mt-12 md:mt-20 text-center text-gray-500 text-sm border-t border-gray-200 pt-8">
+      <footer className="mt-12 md:mt-20 text-center text-gray-500 text-sm border-t border-gray-200 pt-8 print:mt-12">
         <div className="mb-4 flex flex-col md:flex-row justify-center space-y-2 md:space-y-0 md:space-x-6">
           {settings.website && (
             <span style={{ color: settings.primaryColor }} className="font-medium">{settings.website}</span>

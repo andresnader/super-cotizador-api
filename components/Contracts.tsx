@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { CompanySettings, Quote } from '../types';
-import { getQuotes } from '../services/storage';
+import { fetchQuotes, createQuoteDoc } from '../services/google';
 
 interface ContractsProps {
     settings: CompanySettings;
@@ -9,42 +10,35 @@ interface ContractsProps {
 const Contracts: React.FC<ContractsProps> = ({ settings }) => {
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [selectedQuoteId, setSelectedQuoteId] = useState('');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        setQuotes(getQuotes().filter(q => q.status === 'Aceptada'));
+        const load = async () => {
+            const all = await fetchQuotes();
+            setQuotes(all.filter(q => q.status === 'Aceptada'));
+        };
+        load();
     }, []);
 
-    const handlePrint = () => {
+    const handleCreateContract = async () => {
         const q = quotes.find(quote => quote.id === selectedQuoteId);
         if (!q) return;
-
-        // Simple contract print logic (In a real app, this would be a full template)
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.write(`
-                <html>
-                <head><title>Contrato - ${q.number}</title></head>
-                <body style="font-family: sans-serif; padding: 40px; line-height: 1.6;">
-                    <h1 style="text-align: center;">CONTRATO DE SERVICIOS</h1>
-                    <p>Entre <strong>${settings.name}</strong> y <strong>${q.client.name}</strong>...</p>
-                    <h3>Detalles:</h3>
-                    <ul>${q.items.map(i => `<li>${i.name} - $${i.price}</li>`).join('')}</ul>
-                    <h3>Total: $${q.total.toFixed(2)}</h3>
-                    <div style="margin-top: 50px; display: flex; justify-content: space-between;">
-                        <div>_________________<br>${settings.repName}</div>
-                        <div>_________________<br>${q.client.name}</div>
-                    </div>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.print();
+        
+        setLoading(true);
+        try {
+            const docId = await createQuoteDoc(q);
+            alert(`Contrato creado en Drive.\nID: ${docId}`);
+            window.open(`https://docs.google.com/document/d/${docId}/edit`, '_blank');
+        } catch (e: any) {
+            alert("Error creando contrato: " + e.message);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Gestión de Contratos</h2>
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Gestión de Contratos (Drive)</h2>
             <div className="max-w-md">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Cotización Aceptada</label>
                 <select 
@@ -57,11 +51,11 @@ const Contracts: React.FC<ContractsProps> = ({ settings }) => {
                 </select>
                 
                 <button 
-                    disabled={!selectedQuoteId}
-                    onClick={handlePrint}
-                    className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    disabled={!selectedQuoteId || loading}
+                    onClick={handleCreateContract}
+                    className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                    <i className="fas fa-file-signature mr-2"></i> Generar Contrato PDF
+                    {loading ? 'Creando...' : <><i className="fas fa-file-contract mr-2"></i> Generar Contrato (Google Doc)</>}
                 </button>
             </div>
         </div>

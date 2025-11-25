@@ -1,5 +1,7 @@
+
 export interface Client {
   id: string;
+  rowId?: number; // For Google Sheets updates
   code: string;
   name: string;
   ruc: string;
@@ -11,6 +13,7 @@ export interface Client {
 
 export interface Service {
   id: string;
+  rowId?: number; // For Google Sheets updates
   code: string;
   name: string;
   description: string;
@@ -32,6 +35,7 @@ export interface QuoteItem {
 
 export interface Quote {
   id: string;
+  rowId?: number; // For Google Sheets updates
   number: string;
   issueDate: string;
   validityDate: string;
@@ -42,6 +46,7 @@ export interface Quote {
   total: number;
   notes: string;
   status: 'Pendiente' | 'Aceptada' | 'Rechazada';
+  googleDocId?: string | null; // Link to Google Doc
   companySettings: CompanySettings;
 }
 
@@ -63,5 +68,5 @@ export interface CompanySettings {
 export interface Contract {
   quoteId: string;
   text: string;
-  config: any; // Flexible config for the contract fields
+  config: any;
 }

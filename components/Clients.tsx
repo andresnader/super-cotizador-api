@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Client, Quote } from '../types';
-import { getClients, saveClients, getQuotes, saveQuotes } from '../services/storage';
+import { fetchClients, saveClient, deleteClient, fetchQuotes, updateQuoteStatus } from '../services/google';
 import Modal from './Modal';
 
 interface ClientsProps {
@@ -10,31 +11,40 @@ interface ClientsProps {
 
 const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const [clients, setClients] = useState<Client[]>([]);
+    const [loading, setLoading] = useState(true);
     const [form, setForm] = useState<Partial<Client>>({});
     const [isEditing, setIsEditing] = useState(false);
     
-    // UI State
     const [showFormModal, setShowFormModal] = useState(false);
-
-    // Search State
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Quote Management State
     const [selectedClientForQuotes, setSelectedClientForQuotes] = useState<Client | null>(null);
     const [clientQuotes, setClientQuotes] = useState<Quote[]>([]);
     const [showQuotesModal, setShowQuotesModal] = useState(false);
+    const [quotesLoading, setQuotesLoading] = useState(false);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const data = await fetchClients();
+            setClients(data);
+        } catch (e) {
+            console.error(e);
+            alert("Error cargando clientes");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        setClients(getClients());
+        loadData();
     }, []);
 
-    // Filtered Clients based on Search
     const filteredClients = clients.filter(c => {
         const term = searchTerm.toLowerCase();
         return (
-            c.name.toLowerCase().includes(term) ||
-            c.ruc.includes(term) ||
-            c.code.toLowerCase().includes(term)
+            (c.name || '').toLowerCase().includes(term) ||
+            (c.ruc || '').includes(term)
         );
     });
 
@@ -42,21 +52,19 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        let newClients = [...clients];
-        if (isEditing && form.id) {
-            newClients = newClients.map(c => c.id === form.id ? form as Client : c);
-        } else {
-            const newClient = { ...form, id: `client_${Date.now()}` } as Client;
-            if (!newClient.code) newClient.code = newClient.name.substring(0, 3).toUpperCase();
-            newClients.push(newClient);
+        try {
+            const newClient = { ...form } as Client;
+            await saveClient(newClient);
+            await loadData(); // Reload list
+            setForm({});
+            setIsEditing(false);
+            setShowFormModal(false);
+        } catch (e) {
+            console.error(e);
+            alert("Error guardando cliente");
         }
-        setClients(newClients);
-        saveClients(newClients);
-        setForm({});
-        setIsEditing(false);
-        setShowFormModal(false);
     };
 
     const handleEdit = (c: Client) => {
@@ -71,37 +79,44 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         setShowFormModal(true);
     };
 
-    const handleDelete = (id: string) => {
-        if (confirm("¿Eliminar cliente?")) {
-            const newClients = clients.filter(c => c.id !== id);
-            setClients(newClients);
-            saveClients(newClients);
+    const handleDelete = async (rowId?: number) => {
+        if (!rowId) return;
+        if (confirm("¿Eliminar cliente? Esto limpiará la fila en Google Sheets.")) {
+            try {
+                await deleteClient(rowId);
+                await loadData();
+            } catch (e) {
+                console.error(e);
+                alert("Error eliminando cliente");
+            }
         }
     };
 
-    // Client Quotes Logic
-    const handleViewQuotes = (client: Client) => {
-        const allQuotes = getQuotes();
-        const filtered = allQuotes.filter(q => q.client.id === client.id);
-        setClientQuotes(filtered.reverse()); // Show newest first
+    const handleViewQuotes = async (client: Client) => {
         setSelectedClientForQuotes(client);
         setShowQuotesModal(true);
-    };
-
-    const handleDeleteQuote = (quoteId: string) => {
-        if (confirm("¿Eliminar esta cotización del historial?")) {
-            const allQuotes = getQuotes();
-            const updatedAll = allQuotes.filter(q => q.id !== quoteId);
-            saveQuotes(updatedAll);
-            setClientQuotes(clientQuotes.filter(q => q.id !== quoteId));
+        setQuotesLoading(true);
+        try {
+            const allQuotes = await fetchQuotes();
+            const filtered = allQuotes.filter(q => q.client.ruc === client.ruc); // Match by RUC as reliable ID
+            setClientQuotes(filtered.reverse());
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setQuotesLoading(false);
         }
     };
 
-    const handleQuoteStatusChange = (quoteId: string, newStatus: Quote['status']) => {
-        const allQuotes = getQuotes();
-        const updatedAll = allQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q);
-        saveQuotes(updatedAll);
-        setClientQuotes(clientQuotes.map(q => q.id === quoteId ? { ...q, status: newStatus } : q));
+    const handleQuoteStatusChange = async (quote: Quote, newStatus: Quote['status']) => {
+        if (!quote.rowId) return;
+        try {
+            await updateQuoteStatus(quote.rowId, newStatus);
+            // Update local state
+            setClientQuotes(clientQuotes.map(q => q.id === quote.id ? { ...q, status: newStatus } : q));
+        } catch(e) {
+            console.error(e);
+            alert("Error actualizando estado");
+        }
     };
 
     const ClientForm = () => (
@@ -109,24 +124,21 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
             <input name="name" value={form.name || ''} onChange={handleChange} placeholder="Razón Social *" required className="p-3 border rounded-lg w-full" />
             <div className="grid grid-cols-2 gap-4">
                 <input name="ruc" value={form.ruc || ''} onChange={handleChange} placeholder="RUC *" required className="p-3 border rounded-lg w-full" />
-                <input name="code" value={form.code || ''} onChange={handleChange} placeholder="Código (Opcional)" className="p-3 border rounded-lg w-full" />
+                <input name="contact" value={form.contact || ''} onChange={handleChange} placeholder="Email / Contacto" className="p-3 border rounded-lg w-full" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-                <input name="contact" value={form.contact || ''} onChange={handleChange} placeholder="Email" type="email" className="p-3 border rounded-lg w-full" />
                 <input name="phone" value={form.phone || ''} onChange={handleChange} placeholder="Teléfono" className="p-3 border rounded-lg w-full" />
             </div>
-            <input name="address" value={form.address || ''} onChange={handleChange} placeholder="Dirección" className="p-3 border rounded-lg w-full" />
             
             <div className="flex gap-3 mt-4">
-                <button type="button" onClick={() => { setShowFormModal(false); if(isModal) window.location.reload(); }} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+                <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
                 <button type="submit" className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
-                    {isEditing ? 'Actualizar Cliente' : 'Guardar Cliente'}
+                    {isEditing ? 'Actualizar (Google Sheets)' : 'Guardar (Google Sheets)'}
                 </button>
             </div>
         </form>
     );
 
-    // Quick Add Modal View
     if (isModal) {
         return (
             <div className="bg-white p-4">
@@ -136,12 +148,10 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         );
     }
 
-    // Main View
     return (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 max-w-6xl mx-auto">
-            {/* Header with Title and Add Button */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold text-gray-800">Gestión de Clientes</h2>
+                <h2 className="text-2xl font-bold text-gray-800">Gestión de Clientes (Drive)</h2>
                 <button 
                     onClick={openCreateModal}
                     className="w-full md:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center justify-center font-medium"
@@ -150,7 +160,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 </button>
             </div>
 
-            {/* Form Modal */}
             <Modal isOpen={showFormModal} onClose={() => setShowFormModal(false)}>
                 <div className="p-6">
                     <h2 className="text-xl font-bold mb-6 text-gray-800">{isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
@@ -158,87 +167,69 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 </div>
             </Modal>
             
-            {/* Search Bar - Styles matching Services.tsx */}
             <div className="mb-6 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i className="fas fa-search text-gray-400"></i>
                 </div>
                 <input
                     type="text"
-                    placeholder="Buscar cliente por Nombre, RUC o Código..."
+                    placeholder="Buscar por Nombre o RUC..."
                     className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
 
-            {/* Client List - Cards View */}
-            <div className="space-y-4">
-                {filteredClients.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        No se encontraron clientes.
-                    </div>
-                ) : (
-                    filteredClients.map(c => (
-                        <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            {/* Left: Name and Contact */}
-                            <div className="flex-1">
-                                <h3 className="text-lg font-bold text-gray-900 leading-tight">{c.name}</h3>
-                                <div className="text-sm text-gray-500 mt-1">
-                                    {c.contact && <span>{c.contact}</span>}
-                                    {c.phone && <span className="ml-2 text-gray-400">• {c.phone}</span>}
-                                </div>
-                            </div>
-
-                            {/* Center: RUC and Address */}
-                            <div className="flex-1 md:text-right md:pr-8">
-                                <div className="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded text-sm font-mono font-medium mb-1">
-                                    {c.ruc}
-                                </div>
-                                <div className="text-sm text-gray-500 uppercase tracking-wide">
-                                    {c.address || 'SIN DIRECCIÓN'}
-                                </div>
-                            </div>
-
-                            {/* Right: Actions */}
-                            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                                <button 
-                                    onClick={() => handleViewQuotes(c)} 
-                                    className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition flex items-center"
-                                >
-                                    <i className="fas fa-history mr-2"></i> Historial
-                                </button>
-                                <div className="flex gap-1">
-                                    <button onClick={() => handleEdit(c)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition" title="Editar">
-                                        <i className="fas fa-pencil-alt"></i>
-                                    </button>
-                                    <button onClick={() => handleDelete(c.id)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition" title="Eliminar">
-                                        <i className="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
+            {loading ? (
+                <div className="text-center py-12 text-gray-500">Cargando desde Google Sheets...</div>
+            ) : (
+                <div className="space-y-4">
+                    {filteredClients.length === 0 ? (
+                        <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                            No se encontraron clientes.
                         </div>
-                    ))
-                )}
-            </div>
+                    ) : (
+                        filteredClients.map(c => (
+                            <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-bold text-gray-900 leading-tight">{c.name}</h3>
+                                    <div className="text-sm text-gray-500 mt-1">
+                                        {c.contact && <span>{c.contact}</span>}
+                                    </div>
+                                </div>
+                                <div className="flex-1 md:text-right md:pr-8">
+                                    <div className="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded text-sm font-mono font-medium mb-1">
+                                        {c.ruc}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                                    <button onClick={() => handleViewQuotes(c)} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition flex items-center">
+                                        <i className="fas fa-history mr-2"></i> Historial
+                                    </button>
+                                    <div className="flex gap-1">
+                                        <button onClick={() => handleEdit(c)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"><i className="fas fa-pencil-alt"></i></button>
+                                        <button onClick={() => handleDelete(c.rowId)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition"><i className="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
 
-            {/* Modal de Historial de Cotizaciones */}
             <Modal isOpen={showQuotesModal} onClose={() => setShowQuotesModal(false)} maxWidth="max-w-4xl">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6 pb-2 border-b">
                         <div>
-                             <h3 className="text-xl font-bold text-gray-800">Historial de Cotizaciones</h3>
+                             <h3 className="text-xl font-bold text-gray-800">Historial</h3>
                              <p className="text-sm text-gray-500">Cliente: {selectedClientForQuotes?.name}</p>
                         </div>
-                        <button onClick={() => setShowQuotesModal(false)} className="text-gray-400 hover:text-gray-600">
-                            <i className="fas fa-times text-xl"></i>
-                        </button>
+                        <button onClick={() => setShowQuotesModal(false)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                     </div>
                     
-                    {clientQuotes.length === 0 ? (
+                    {quotesLoading ? <p className="text-center py-4">Cargando...</p> : clientQuotes.length === 0 ? (
                         <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                            <i className="fas fa-file-invoice text-gray-300 text-4xl mb-3"></i>
-                            <p className="text-gray-500">Este cliente no tiene cotizaciones registradas.</p>
+                            <p className="text-gray-500">Sin cotizaciones.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto max-h-[60vh] border rounded-lg">
@@ -249,7 +240,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                                         <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fecha</th>
                                         <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase">Total</th>
                                         <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Estado</th>
-                                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase">Acción</th>
+                                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase">Doc</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -261,12 +252,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                                             <td className="px-4 py-3 text-center">
                                                 <select 
                                                     value={q.status} 
-                                                    onChange={(e) => handleQuoteStatusChange(q.id, e.target.value as any)}
-                                                    className={`p-1.5 rounded-md text-xs font-medium border-0 ring-1 ring-inset cursor-pointer focus:ring-2
-                                                        ${q.status === 'Aceptada' ? 'bg-green-50 text-green-700 ring-green-600/20' : ''}
-                                                        ${q.status === 'Rechazada' ? 'bg-red-50 text-red-700 ring-red-600/20' : ''}
-                                                        ${q.status === 'Pendiente' ? 'bg-yellow-50 text-yellow-800 ring-yellow-600/20' : ''}
-                                                    `}
+                                                    onChange={(e) => handleQuoteStatusChange(q, e.target.value as any)}
+                                                    className="p-1.5 rounded-md text-xs font-medium border-0 ring-1 ring-inset cursor-pointer"
                                                 >
                                                     <option value="Pendiente">Pendiente</option>
                                                     <option value="Aceptada">Aceptada</option>
@@ -274,14 +261,16 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                                                 </select>
                                             </td>
                                             <td className="px-4 py-3 text-right text-sm">
+                                                {q.googleDocId && (
+                                                    <a href={`https://docs.google.com/document/d/${q.googleDocId}/edit`} target="_blank" className="text-blue-600 hover:underline" title="Ver en Drive">
+                                                        <i className="fas fa-link"></i>
+                                                    </a>
+                                                )}
                                                 {onPrint && (
-                                                    <button onClick={() => onPrint(q)} className="text-gray-600 hover:text-indigo-600 mr-3 transition" title="Imprimir PDF">
-                                                        <i className="fas fa-print fa-lg"></i>
+                                                    <button onClick={() => onPrint(q)} className="text-gray-600 hover:text-indigo-600 ml-3 transition" title="Imprimir">
+                                                        <i className="fas fa-print"></i>
                                                     </button>
                                                 )}
-                                                <button onClick={() => handleDeleteQuote(q.id)} className="text-gray-400 hover:text-red-600 transition" title="Eliminar">
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
                                             </td>
                                         </tr>
                                     ))}
