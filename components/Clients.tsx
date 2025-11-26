@@ -123,20 +123,63 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     };
 
     const ClientForm = () => (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
-            <input name="name" value={form.name || ''} onChange={handleChange} placeholder="Razón Social *" required className="p-3 border rounded-lg w-full" />
-            <div className="grid grid-cols-2 gap-4">
-                <input name="ruc" value={form.ruc || ''} onChange={handleChange} placeholder="RUC *" required className="p-3 border rounded-lg w-full" />
-                <input name="contact" value={form.contact || ''} onChange={handleChange} placeholder="Email / Contacto" className="p-3 border rounded-lg w-full" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <input name="phone" value={form.phone || ''} onChange={handleChange} placeholder="Teléfono" className="p-3 border rounded-lg w-full" />
+        <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Row 1: Name */}
+            <div>
+                <input 
+                    name="name" 
+                    value={form.name || ''} 
+                    onChange={handleChange} 
+                    placeholder="Razon Social *" 
+                    required 
+                    className="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" 
+                />
             </div>
             
-            <div className="flex gap-3 mt-4">
-                <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-                <button type="submit" className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
-                    {isEditing ? `Actualizar (${sourceLabel})` : `Guardar (${sourceLabel})`}
+            {/* Row 2: RUC & Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input 
+                    name="ruc" 
+                    value={form.ruc || ''} 
+                    onChange={handleChange} 
+                    placeholder="RUC *" 
+                    required 
+                    className="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" 
+                />
+                <input 
+                    name="contact" 
+                    value={form.contact || ''} 
+                    onChange={handleChange} 
+                    placeholder="Email / Contacto" 
+                    className="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" 
+                />
+            </div>
+
+            {/* Row 3: Phone */}
+            <div>
+                <input 
+                    name="phone" 
+                    value={form.phone || ''} 
+                    onChange={handleChange} 
+                    placeholder="Telefono" 
+                    className="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" 
+                />
+            </div>
+            
+            {/* Buttons */}
+            <div className="flex gap-3 mt-6">
+                <button 
+                    type="button" 
+                    onClick={() => setShowFormModal(false)} 
+                    className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition font-medium"
+                >
+                    Cancelar
+                </button>
+                <button 
+                    type="submit" 
+                    className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold shadow-md"
+                >
+                    {isEditing ? `Actualizar (${mode === 'local' ? 'Local' : 'Drive'})` : `Guardar (${mode === 'local' ? 'Local' : 'Drive'})`}
                 </button>
             </div>
         </form>
@@ -145,7 +188,9 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     if (isModal) {
         return (
             <div className="bg-white p-4">
-                <h2 className="text-xl font-bold mb-6 text-gray-800">Nuevo Cliente</h2>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-gray-800">Nuevo Cliente</h2>
+                </div>
                 <ClientForm />
             </div>
         );
@@ -164,7 +209,13 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
             </div>
 
             <Modal isOpen={showFormModal} onClose={() => setShowFormModal(false)}>
-                <div className="p-6">
+                <div className="p-6 relative">
+                    <button 
+                        onClick={() => setShowFormModal(false)} 
+                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                    >
+                        <i className="fas fa-times text-xl"></i>
+                    </button>
                     <h2 className="text-xl font-bold mb-6 text-gray-800">{isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
                     <ClientForm />
                 </div>
@@ -176,8 +227,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 </div>
                 <input
                     type="text"
-                    placeholder="Buscar por Nombre o RUC..."
-                    className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                    placeholder="Buscar cliente por Nombre, RUC o Codigo..."
+                    className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm bg-white"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -220,60 +271,72 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 </div>
             )}
 
-            <Modal isOpen={showQuotesModal} onClose={() => setShowQuotesModal(false)} maxWidth="max-w-4xl">
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-6 pb-2 border-b">
+            <Modal isOpen={showQuotesModal} onClose={() => setShowQuotesModal(false)} maxWidth="max-w-4xl" hideCloseButton={true}>
+                <div className="p-6 bg-white h-full flex flex-col">
+                    <div className="flex justify-between items-start mb-6 pb-2 border-b border-gray-100">
                         <div>
                              <h3 className="text-xl font-bold text-gray-800">Historial</h3>
-                             <p className="text-sm text-gray-500">Cliente: {selectedClientForQuotes?.name}</p>
+                             <p className="text-sm text-gray-500 mt-1">Cliente: <span className="font-medium text-gray-700">{selectedClientForQuotes?.name}</span></p>
                         </div>
-                        <button onClick={() => setShowQuotesModal(false)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
+                        <button 
+                            onClick={() => setShowQuotesModal(false)} 
+                            className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition"
+                        >
+                            <i className="fas fa-times text-xl"></i>
+                        </button>
                     </div>
                     
-                    {quotesLoading ? <p className="text-center py-4">Cargando...</p> : clientQuotes.length === 0 ? (
+                    {quotesLoading ? <p className="text-center py-8 text-gray-500">Cargando historial...</p> : clientQuotes.length === 0 ? (
                         <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                            <p className="text-gray-500">Sin cotizaciones.</p>
+                            <p className="text-gray-500">Este cliente no tiene cotizaciones registradas.</p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto max-h-[60vh] border rounded-lg">
+                        <div className="overflow-x-auto border rounded-lg">
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50 sticky top-0">
+                                <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Número</th>
                                         <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fecha</th>
                                         <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase">Total</th>
                                         <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Estado</th>
-                                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase">Doc</th>
+                                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Doc</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {clientQuotes.map(q => (
-                                        <tr key={q.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-3 text-sm font-mono font-semibold text-indigo-600">{q.number}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-600">{q.issueDate}</td>
-                                            <td className="px-4 py-3 text-right text-sm font-bold text-gray-800">${q.total.toFixed(2)}</td>
+                                        <tr key={q.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-4 py-3 text-sm font-mono font-semibold text-indigo-600 whitespace-nowrap">{q.number}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{q.issueDate}</td>
+                                            <td className="px-4 py-3 text-right text-sm font-bold text-gray-800 whitespace-nowrap">${q.total.toFixed(2)}</td>
                                             <td className="px-4 py-3 text-center">
-                                                <select 
-                                                    value={q.status} 
-                                                    onChange={(e) => handleQuoteStatusChange(q, e.target.value as any)}
-                                                    className="p-1.5 rounded-md text-xs font-medium border-0 ring-1 ring-inset cursor-pointer"
-                                                >
-                                                    <option value="Pendiente">Pendiente</option>
-                                                    <option value="Aceptada">Aceptada</option>
-                                                    <option value="Rechazada">Rechazada</option>
-                                                </select>
+                                                <div className="relative inline-block">
+                                                    <select 
+                                                        value={q.status} 
+                                                        onChange={(e) => handleQuoteStatusChange(q, e.target.value as any)}
+                                                        className={`appearance-none pl-2 pr-6 py-1 rounded-md text-xs font-medium border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                                            ${q.status === 'Aceptada' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                                              q.status === 'Rechazada' ? 'bg-red-50 text-red-700 border-red-200' : 
+                                                              'bg-yellow-50 text-yellow-700 border-yellow-200'}`}
+                                                    >
+                                                        <option value="Pendiente">Pendiente</option>
+                                                        <option value="Aceptada">Aceptada</option>
+                                                        <option value="Rechazada">Rechazada</option>
+                                                    </select>
+                                                </div>
                                             </td>
-                                            <td className="px-4 py-3 text-right text-sm">
-                                                {q.googleDocId && (
-                                                    <a href={`https://docs.google.com/document/d/${q.googleDocId}/edit`} target="_blank" className="text-blue-600 hover:underline" title="Ver en Drive">
-                                                        <i className="fas fa-link"></i>
-                                                    </a>
-                                                )}
-                                                {onPrint && (
-                                                    <button onClick={() => onPrint(q)} className="text-gray-600 hover:text-indigo-600 ml-3 transition" title="Imprimir">
-                                                        <i className="fas fa-print"></i>
-                                                    </button>
-                                                )}
+                                            <td className="px-4 py-3 text-center text-sm">
+                                                <div className="flex justify-center items-center space-x-3">
+                                                    {q.googleDocId && (
+                                                        <a href={`https://docs.google.com/document/d/${q.googleDocId}/edit`} target="_blank" className="text-blue-600 hover:text-blue-800" title="Ver en Drive">
+                                                            <i className="fas fa-file-alt"></i>
+                                                        </a>
+                                                    )}
+                                                    {onPrint && (
+                                                        <button onClick={() => onPrint(q)} className="text-gray-500 hover:text-gray-800" title="Imprimir">
+                                                            <i className="fas fa-print"></i>
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

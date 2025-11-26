@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { CompanySettings, Client, Service } from '../types';
 import { 
@@ -142,7 +143,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdate }) => {
             }
         };
         reader.readAsText(file);
-        // Reset input
         e.target.value = '';
     };
 
@@ -206,40 +206,88 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdate }) => {
             }
         };
         reader.readAsText(file);
-        // Reset input
         e.target.value = '';
     };
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Configuración</h2>
-            <form onSubmit={handleSave} className="space-y-4">
-                <div><label className="block text-sm font-medium">Nombre Empresa</label><input name="name" value={form.name} onChange={handleChange} className="w-full p-2 border rounded" /></div>
-                <div><label className="block text-sm font-medium">Dirección</label><input name="address" value={form.address} onChange={handleChange} className="w-full p-2 border rounded" /></div>
-                <div><label className="block text-sm font-medium">Contacto (Email)</label><input name="contact" value={form.contact} onChange={handleChange} className="w-full p-2 border rounded" /></div>
-                <div><label className="block text-sm font-medium">RUC</label><input name="ruc" value={form.ruc} onChange={handleChange} className="w-full p-2 border rounded" /></div>
-                <div><label className="block text-sm font-medium">Sitio Web</label><input name="website" value={form.website} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+            <form onSubmit={handleSave} className="space-y-6">
                 
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium">Color Primario</label>
-                        <input type="color" name="primaryColor" value={form.primaryColor} onChange={handleChange} className="w-full h-10 border rounded p-1" />
+                {/* Logo Section */}
+                <div className="border-2 border-dashed border-indigo-200 rounded-xl p-6 flex flex-col items-center justify-center bg-indigo-50">
+                    <label className="block text-sm font-medium text-gray-600 mb-3 self-start">Logo</label>
+                    <div className="w-full flex flex-col items-center">
+                        {form.logo ? (
+                            <img src={form.logo} alt="Logo Preview" className="h-24 object-contain mb-4" />
+                        ) : (
+                            <div className="h-24 w-24 bg-white rounded-lg border border-gray-200 flex items-center justify-center mb-4 text-gray-300">
+                                <i className="fas fa-image text-3xl"></i>
+                            </div>
+                        )}
+                        <label className="cursor-pointer bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 text-sm font-medium transition">
+                            <i className="fas fa-upload mr-2"></i> Subir Logo
+                            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                        </label>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium">Color Acento</label>
-                        <input type="color" name="accentColor" value={form.accentColor} onChange={handleChange} className="w-full h-10 border rounded p-1" />
-                    </div>
+                    <button type="submit" className="w-full mt-6 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-semibold shadow-sm">
+                        Guardar
+                    </button>
                 </div>
 
+                {/* Font Section */}
                 <div>
-                    <label className="block text-sm font-medium">Logo</label>
-                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700" />
-                    {form.logo && <img src={form.logo} alt="Preview" className="mt-2 h-16 object-contain border p-1 rounded" />}
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipografía</label>
+                    <div className="relative">
+                        <select 
+                            name="typography" 
+                            value={form.typography || 'Inter, sans-serif'} 
+                            onChange={handleChange}
+                            className="w-full p-3 border border-gray-300 rounded-lg appearance-none bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="Inter, sans-serif">Inter (Predeterminada)</option>
+                            <option value="Roboto, sans-serif">Roboto</option>
+                            <option value="'Open Sans', sans-serif">Open Sans</option>
+                            <option value="Montserrat, sans-serif">Montserrat</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <i className="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Adicionar personalización de tipografías por Google Fonts</p>
                 </div>
 
-                <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Guardar</button>
+                <div className="space-y-4">
+                    <div><label className="block text-sm font-medium text-gray-700">Nombre Empresa</label><input name="name" value={form.name} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Dirección</label><input name="address" value={form.address} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Contacto (Email)</label><input name="contact" value={form.contact} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">RUC</label><input name="ruc" value={form.ruc} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                    <div><label className="block text-sm font-medium text-gray-700">Sitio Web</label><input name="website" value={form.website} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-lg" /></div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Color Primario</label>
+                            <div className="flex items-center mt-1">
+                                <input type="color" name="primaryColor" value={form.primaryColor} onChange={handleChange} className="w-10 h-10 border-none p-0 mr-2 cursor-pointer rounded-full overflow-hidden" />
+                                <span className="text-sm text-gray-600 uppercase">{form.primaryColor}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Color Acento</label>
+                            <div className="flex items-center mt-1">
+                                <input type="color" name="accentColor" value={form.accentColor} onChange={handleChange} className="w-10 h-10 border-none p-0 mr-2 cursor-pointer rounded-full overflow-hidden" />
+                                <span className="text-sm text-gray-600 uppercase">{form.accentColor}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" className="w-full bg-gray-800 text-white py-3 rounded-lg hover:bg-gray-900 transition font-semibold">
+                    Actualizar Datos Generales
+                </button>
             </form>
 
+            {/* Import Section */}
             <div className="mt-12 pt-6 border-t border-gray-200">
                 <h3 className="font-bold mb-4 text-xl text-gray-800">Importación Masiva (CSV)</h3>
                 
@@ -251,28 +299,28 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdate }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Import Clients */}
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h4 className="font-bold text-gray-700 mb-2">Clientes</h4>
-                        <div className="flex flex-col gap-2">
-                             <button onClick={downloadClientTemplate} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium text-left">
-                                <i className="fas fa-download mr-1"></i> Descargar Plantilla
+                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 className="font-bold text-gray-800 mb-3">Clientes</h4>
+                        <div className="flex flex-col gap-3">
+                             <button onClick={downloadClientTemplate} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
+                                <i className="fas fa-download mr-2"></i> Descargar Plantilla
                             </button>
-                            <label className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg cursor-pointer hover:bg-gray-50 text-center text-sm shadow-sm">
-                                <i className="fas fa-file-csv mr-2 text-green-600"></i> Seleccionar CSV
+                            <label className="bg-white border border-gray-300 text-gray-700 py-2.5 px-4 rounded-lg cursor-pointer hover:bg-gray-50 text-center text-sm font-medium shadow-sm transition flex items-center justify-center">
+                                <i className="fas fa-file-csv mr-2 text-green-600 text-lg"></i> Seleccionar CSV
                                 <input type="file" className="hidden" accept=".csv" onChange={handleClientCSVUpload} />
                             </label>
                         </div>
                     </div>
 
                     {/* Import Services */}
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h4 className="font-bold text-gray-700 mb-2">Servicios</h4>
-                        <div className="flex flex-col gap-2">
-                            <button onClick={downloadServiceTemplate} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium text-left">
-                                <i className="fas fa-download mr-1"></i> Descargar Plantilla
+                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 className="font-bold text-gray-800 mb-3">Servicios</h4>
+                        <div className="flex flex-col gap-3">
+                            <button onClick={downloadServiceTemplate} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
+                                <i className="fas fa-download mr-2"></i> Descargar Plantilla
                             </button>
-                            <label className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg cursor-pointer hover:bg-gray-50 text-center text-sm shadow-sm">
-                                <i className="fas fa-file-csv mr-2 text-green-600"></i> Seleccionar CSV
+                            <label className="bg-white border border-gray-300 text-gray-700 py-2.5 px-4 rounded-lg cursor-pointer hover:bg-gray-50 text-center text-sm font-medium shadow-sm transition flex items-center justify-center">
+                                <i className="fas fa-file-csv mr-2 text-green-600 text-lg"></i> Seleccionar CSV
                                 <input type="file" className="hidden" accept=".csv" onChange={handleServiceCSVUpload} />
                             </label>
                         </div>
