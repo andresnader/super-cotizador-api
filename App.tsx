@@ -26,9 +26,13 @@ const App: React.FC = () => {
   
   const [previewQuote, setPreviewQuote] = useState<Quote | null>(null);
 
-  // Init Google API regardless of mode, just in case user chooses Google later
+  // Init Google API only if online
   useEffect(() => {
     const init = async () => {
+        if (!navigator.onLine) {
+            setAuthError("Modo sin conexión detectado. Use el Modo Local.");
+            return;
+        }
         try {
             await initializeGoogleApi();
             setIsGoogleReady(true);

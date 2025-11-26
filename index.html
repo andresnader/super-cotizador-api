@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuoteTool Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CDN ELIMINADO: Se usa el build local -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -14,18 +14,12 @@
                 overflow: visible !important;
                 background: white !important;
             }
-            
-            /* Ocultar todo por defecto */
             body * {
                 visibility: hidden;
             }
-
-            /* Mostrar solo el área de impresión y sus hijos */
             #print-section, #print-section * {
                 visibility: visible;
             }
-
-            /* Posicionamiento absoluto para ocupar toda la hoja */
             #print-section {
                 position: absolute;
                 left: 0;
@@ -37,13 +31,9 @@
                 border: none;
                 box-shadow: none;
             }
-
-            /* Clases utilitarias para ocultar elementos específicos al imprimir */
             .no-print, .print\:hidden {
                 display: none !important;
             }
-            
-            /* Asegurar que los modales no corten el contenido */
             .modal-content-print-fix {
                 position: static !important;
                 overflow: visible !important;
@@ -52,12 +42,9 @@
                 transform: none !important;
                 box-shadow: none !important;
             }
-            
-            /* Ocultar scrollbars */
             ::-webkit-scrollbar {
                 display: none;
             }
-            
             @page {
                 size: auto;
                 margin: 10mm;
@@ -67,17 +54,19 @@
 <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4"
+    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.1.0"
   }
 }
 </script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
     <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
 </body>
 </html>
