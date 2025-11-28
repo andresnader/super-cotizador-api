@@ -1,7 +1,8 @@
 
-import { AuthMode, Client, Service, Quote, DataService } from '../types';
+import { AuthMode, Client, Service, Quote, DataService, RecurringContract } from '../types';
 import * as googleService from './google';
 import * as storageService from './storage';
+import { sessionService } from './sessionService';
 
 class DataManager implements DataService {
     private mode: AuthMode = 'local';
@@ -14,40 +15,75 @@ class DataManager implements DataService {
         return this.mode;
     }
 
+    private getSpreadsheetId(): string {
+        if (this.mode !== 'google') {
+            throw new Error('Spreadsheet ID only available in Google mode');
+        }
+        const id = sessionService.getSpreadsheetId();
+        if (!id) {
+            throw new Error('No spreadsheet ID found. Please initialize database first.');
+        }
+        return id;
+    }
+
     async fetchClients(): Promise<Client[]> {
-        return this.mode === 'google' ? googleService.fetchClients() : storageService.fetchClients();
+        return this.mode === 'google'
+            ? googleService.fetchClients(this.getSpreadsheetId())
+            : storageService.fetchClients();
     }
 
     async saveClient(client: Client): Promise<void> {
-        return this.mode === 'google' ? googleService.saveClient(client) : storageService.saveClient(client);
+        return this.mode === 'google'
+            ? googleService.saveClient(this.getSpreadsheetId(), client)
+            : storageService.saveClient(client);
     }
 
     async deleteClient(rowId: any): Promise<void> {
-        return this.mode === 'google' ? googleService.deleteClient(rowId) : storageService.deleteClient(rowId);
+        return this.mode === 'google'
+            ? googleService.deleteClient(this.getSpreadsheetId(), rowId)
+            : storageService.deleteClient(rowId);
     }
 
     async fetchServices(): Promise<Service[]> {
-        return this.mode === 'google' ? googleService.fetchServices() : storageService.fetchServices();
+        return this.mode === 'google'
+            ? googleService.fetchServices(this.getSpreadsheetId())
+            : storageService.fetchServices();
     }
 
     async saveService(service: Service): Promise<void> {
-        return this.mode === 'google' ? googleService.saveService(service) : storageService.saveService(service);
+        return this.mode === 'google'
+            ? googleService.saveService(this.getSpreadsheetId(), service)
+            : storageService.saveService(service);
     }
 
     async deleteService(rowId: any): Promise<void> {
-        return this.mode === 'google' ? googleService.deleteService(rowId) : storageService.deleteService(rowId);
+        return this.mode === 'google'
+            ? googleService.deleteService(this.getSpreadsheetId(), rowId)
+            : storageService.deleteService(rowId);
     }
 
     async fetchQuotes(): Promise<Quote[]> {
-        return this.mode === 'google' ? googleService.fetchQuotes() : storageService.fetchQuotes();
+        return this.mode === 'google'
+            ? googleService.fetchQuotes(this.getSpreadsheetId())
+            : storageService.fetchQuotes();
     }
 
     async saveQuote(quote: Quote): Promise<void> {
-        return this.mode === 'google' ? googleService.saveQuote(quote) : storageService.saveQuote(quote);
+        return this.mode === 'google'
+            ? googleService.saveQuote(this.getSpreadsheetId(), quote)
+            : storageService.saveQuote(quote);
+    }
+
+    async deleteQuote(rowId: any): Promise<void> {
+        return this.mode === 'google'
+            ? googleService.deleteQuote(this.getSpreadsheetId(), rowId)
+            : storageService.deleteQuote(rowId);
     }
 
     async updateQuoteStatus(rowId: any, status: string): Promise<void> {
-        return this.mode === 'google' ? googleService.updateQuoteStatus(rowId, status) : storageService.updateQuoteStatus(rowId, status);
+        return this.mode === 'google'
+            ? googleService.updateQuoteStatus(this.getSpreadsheetId(), rowId, status)
+            : storageService.updateQuoteStatus(rowId, status);
     }
 
     async createQuoteDoc(quote: Quote): Promise<string> {
@@ -56,6 +92,24 @@ class DataManager implements DataService {
         } else {
             throw new Error("La generación de Google Docs no está disponible en modo local.");
         }
+    }
+
+    async fetchContracts(): Promise<RecurringContract[]> {
+        return this.mode === 'google'
+            ? googleService.fetchContracts(this.getSpreadsheetId())
+            : storageService.fetchContracts();
+    }
+
+    async saveContract(contract: RecurringContract): Promise<void> {
+        return this.mode === 'google'
+            ? googleService.saveContract(this.getSpreadsheetId(), contract)
+            : storageService.saveContract(contract);
+    }
+
+    async deleteContract(rowId: any): Promise<void> {
+        return this.mode === 'google'
+            ? googleService.deleteContract(this.getSpreadsheetId(), rowId)
+            : storageService.deleteContract(rowId);
     }
 }
 

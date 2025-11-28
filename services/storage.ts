@@ -1,19 +1,19 @@
 
-import { Client, Service, Quote, Contract, CompanySettings } from '../types';
+import { Client, Service, Quote, CompanySettings, RecurringContract } from '../types';
 
 const defaultSettings: CompanySettings = {
-  name: 'Tu Empresa S.A.',
-  address: 'Tu Dirección, Guayaquil',
-  contact: 'tuemail@empresa.com',
-  ruc: '1234567890001',
-  repName: 'Andrés Nader',
-  repTitle: 'Gerente General',
-  logo: 'https://placehold.co/200x100/eef2ff/4f46e5?text=Tu+Logo',
-  primaryColor: '#1a202c',
-  accentColor: '#4f46e5',
-  website: '',
-  whatsapp: '',
-  typography: 'Inter, sans-serif'
+    name: 'Tu Empresa S.A.',
+    address: 'Tu Dirección, Guayaquil',
+    contact: 'tuemail@empresa.com',
+    ruc: '1234567890001',
+    repName: 'Andrés Nader',
+    repTitle: 'Gerente General',
+    logo: 'https://placehold.co/200x100/eef2ff/4f46e5?text=Tu+Logo',
+    primaryColor: '#1a202c',
+    accentColor: '#4f46e5',
+    website: '',
+    whatsapp: '',
+    typography: 'Inter, sans-serif'
 };
 
 // Synchronous helpers for internal use
@@ -26,8 +26,8 @@ const _saveServices = (data: Service[]) => localStorage.setItem('services', JSON
 const _getQuotes = (): Quote[] => JSON.parse(localStorage.getItem('quotesHistory') || '[]');
 const _saveQuotes = (data: Quote[]) => localStorage.setItem('quotesHistory', JSON.stringify(data));
 
-const _getContracts = (): Contract[] => JSON.parse(localStorage.getItem('contracts') || '[]');
-const _saveContracts = (data: Contract[]) => localStorage.setItem('contracts', JSON.stringify(data));
+const _getRecurringContracts = (): RecurringContract[] => JSON.parse(localStorage.getItem('recurringContracts') || '[]');
+const _saveRecurringContracts = (data: RecurringContract[]) => localStorage.setItem('recurringContracts', JSON.stringify(data));
 
 // --- Async Interface implementation for DataManager ---
 
@@ -99,6 +99,13 @@ export const saveQuote = async (quote: Quote): Promise<void> => {
     return Promise.resolve();
 };
 
+export const deleteQuote = async (rowId: any): Promise<void> => {
+    const quotes = _getQuotes();
+    const newQuotes = quotes.filter(q => q.id !== rowId);
+    _saveQuotes(newQuotes);
+    return Promise.resolve();
+};
+
 export const updateQuoteStatus = async (rowId: any, status: string): Promise<void> => {
     const quotes = _getQuotes();
     const index = quotes.findIndex(q => q.id === rowId);
@@ -109,19 +116,46 @@ export const updateQuoteStatus = async (rowId: any, status: string): Promise<voi
     return Promise.resolve();
 };
 
+// --- Contracts ---
+
+export const fetchContracts = async (): Promise<RecurringContract[]> => {
+    return Promise.resolve(_getRecurringContracts());
+};
+
+export const saveContract = async (contract: RecurringContract): Promise<void> => {
+    const contracts = _getRecurringContracts();
+    if (contract.id && contracts.some(c => c.id === contract.id)) {
+        const index = contracts.findIndex(c => c.id === contract.id);
+        contracts[index] = { ...contract, rowId: contract.id };
+    } else {
+        contract.id = contract.id || `contract_${Date.now()}`;
+        contract.rowId = contract.id;
+        contracts.push(contract);
+    }
+    _saveRecurringContracts(contracts);
+    return Promise.resolve();
+};
+
+export const deleteContract = async (rowId: any): Promise<void> => {
+    const contracts = _getRecurringContracts();
+    const newContracts = contracts.filter(c => c.id !== rowId);
+    _saveRecurringContracts(newContracts);
+    return Promise.resolve();
+};
+
 // --- Settings & Utils ---
 
 export const getCompanySettings = (): CompanySettings => {
-  const stored = localStorage.getItem('companySettings');
-  return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
+    const stored = localStorage.getItem('companySettings');
+    return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
 };
 export const saveCompanySettings = (data: CompanySettings) => localStorage.setItem('companySettings', JSON.stringify(data));
 
 export const getQuoteCounter = (): number => parseInt(localStorage.getItem('quoteCounter') || '1');
 export const incrementQuoteCounter = () => {
-  const current = getQuoteCounter();
-  localStorage.setItem('quoteCounter', (current + 1).toString());
-  return current + 1;
+    const current = getQuoteCounter();
+    localStorage.setItem('quoteCounter', (current + 1).toString());
+    return current + 1;
 };
 
 // Full backup/restore
@@ -131,7 +165,7 @@ export const exportData = () => {
         clients: _getClients(),
         services: _getServices(),
         quotesHistory: _getQuotes(),
-        contracts: _getContracts(),
+        recurringContracts: _getRecurringContracts(),
         quoteCounter: getQuoteCounter(),
         companySettings: getCompanySettings()
     }, null, 2);
@@ -144,7 +178,7 @@ export const importData = (jsonStr: string) => {
         _saveClients(data.clients || []);
         _saveServices(data.services || []);
         _saveQuotes(data.quotesHistory || []);
-        _saveContracts(data.contracts || []);
+        _saveRecurringContracts(data.recurringContracts || []);
         saveCompanySettings(data.companySettings || defaultSettings);
         localStorage.setItem('quoteCounter', (data.quoteCounter || 1).toString());
         return true;
@@ -204,6 +238,48 @@ export const parseCSV = (csvText: string) => {
     return { headers, data };
 };
 
+// Backup/Restore Functions
+export const exportAllData = async (): Promise<any> => {
+    return {
+        clients: _getClients(),
+        services: _getServices(),
+        quotes: _getQuotes(),
+        contracts: _getRecurringContracts(),
+        settings: getCompanySettings(),
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+};
+
+export const importAllData = async (data: any): Promise<void> => {
+    if (!data || typeof data !== 'object') {
+        throw new Error('Formato de datos inválido');
+    }
+
+    // Validar estructura básica
+    if (!Array.isArray(data.clients) && data.clients !== undefined) {
+        throw new Error('Formato de clientes inválido');
+    }
+    if (!Array.isArray(data.services) && data.services !== undefined) {
+        throw new Error('Formato de servicios inválido');
+    }
+    if (!Array.isArray(data.quotes) && data.quotes !== undefined) {
+        throw new Error('Formato de cotizaciones inválido');
+    }
+    if (!Array.isArray(data.contracts) && data.contracts !== undefined) {
+        throw new Error('Formato de contratos inválido');
+    }
+
+    // Importar datos
+    if (data.clients) _saveClients(data.clients);
+    if (data.services) _saveServices(data.services);
+    if (data.quotes) _saveQuotes(data.quotes);
+    if (data.contracts) _saveRecurringContracts(data.contracts);
+    if (data.settings) saveCompanySettings(data.settings);
+
+    return Promise.resolve();
+};
+
 // Export for DataManager usage
 export const getClients = _getClients;
 export const saveClients = _saveClients;
@@ -211,5 +287,5 @@ export const getServices = _getServices;
 export const saveServices = _saveServices;
 export const getQuotes = _getQuotes;
 export const saveQuotes = _saveQuotes;
-export const getContracts = _getContracts;
-export const saveContracts = _saveContracts;
+export const getRecurringContracts = _getRecurringContracts;
+export const saveRecurringContracts = _saveRecurringContracts;

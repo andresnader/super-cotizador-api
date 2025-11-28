@@ -1,15 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { Quote, CompanySettings } from '../types';
+import { Quote } from '../types';
 import { dataManager } from '../services/dataManager';
 
 interface HistoryProps {
-    settings: CompanySettings;
     onEdit: (id: string) => void;
     onPrint: (quote: Quote) => void;
 }
 
-const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
+const History: React.FC<HistoryProps> = ({ onPrint, onEdit }) => {
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -17,18 +16,19 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
     const mode = dataManager.getMode();
     const sourceLabel = mode === 'google' ? 'Drive' : 'Local';
 
+    const load = async () => {
+        setLoading(true);
+        try {
+            const data = await dataManager.fetchQuotes();
+            setQuotes(data);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const load = async () => {
-            setLoading(true);
-            try {
-                const data = await dataManager.fetchQuotes();
-                setQuotes(data);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
-            }
-        };
         load();
     }, []);
 
@@ -40,6 +40,19 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
         } catch (e) {
             console.error(e);
             alert("Error actualizando estado");
+        }
+    };
+
+    const handleDelete = async (quote: Quote) => {
+        if (!quote.rowId) return;
+        if (confirm(`¿Estás seguro de eliminar la cotización ${quote.number}?`)) {
+            try {
+                await dataManager.deleteQuote(quote.rowId);
+                await load();
+            } catch (e) {
+                console.error(e);
+                alert("Error eliminando cotización");
+            }
         }
     };
 
@@ -56,9 +69,9 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Historial ({sourceLabel})</h2>
                 <div className="relative w-full sm:w-64">
-                    <input 
-                        type="text" 
-                        placeholder="Buscar..." 
+                    <input
+                        type="text"
+                        placeholder="Buscar..."
                         className="w-full p-2 border border-gray-300 rounded-lg"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -87,8 +100,8 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
                                     <td className="px-4 py-3">{q.issueDate}</td>
                                     <td className="px-4 py-3 text-right font-semibold">${q.total.toFixed(2)}</td>
                                     <td className="px-4 py-3 text-center">
-                                        <select 
-                                            value={q.status} 
+                                        <select
+                                            value={q.status}
                                             onChange={(e) => handleStatusChange(q, e.target.value as any)}
                                             className="p-1 rounded text-xs border border-gray-300"
                                         >
@@ -99,9 +112,11 @@ const History: React.FC<HistoryProps> = ({ settings, onPrint }) => {
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         {q.googleDocId && (
-                                            <a href={`https://docs.google.com/document/d/${q.googleDocId}/edit`} target="_blank" className="text-blue-600 hover:text-blue-900 mr-3"><i className="fas fa-link"></i></a>
+                                            <a href={`https://docs.google.com/document/d/${q.googleDocId}/edit`} target="_blank" className="text-blue-600 hover:text-blue-900 mr-3" title="Ver en Drive"><i className="fas fa-link"></i></a>
                                         )}
-                                        <button onClick={() => onPrint(q)} className="text-indigo-600 hover:text-indigo-900" title="Imprimir"><i className="fas fa-print"></i></button>
+                                        <button onClick={() => onPrint(q)} className="text-indigo-600 hover:text-indigo-900 mr-3" title="Imprimir"><i className="fas fa-print"></i></button>
+                                        <button onClick={() => onEdit(q.id)} className="text-green-600 hover:text-green-900 mr-3" title="Editar"><i className="fas fa-edit"></i></button>
+                                        <button onClick={() => handleDelete(q)} className="text-red-600 hover:text-red-900" title="Eliminar"><i className="fas fa-trash"></i></button>
                                     </td>
                                 </tr>
                             ))}

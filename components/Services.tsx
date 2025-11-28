@@ -8,6 +8,38 @@ interface ServicesProps {
     isModal?: boolean;
 }
 
+// Extracted ServiceForm to prevent re-renders during typing
+interface ServiceFormProps {
+    form: Partial<Service>;
+    isEditing: boolean;
+    mode: 'google' | 'local' | null;
+    sourceLabel: string;
+    onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    onSubmit: (e: React.FormEvent) => void;
+    onCancel: () => void;
+}
+
+const ServiceForm: React.FC<ServiceFormProps> = ({ form, isEditing, sourceLabel, onFormChange, onSubmit, onCancel }) => (
+    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input name="code" value={form.code || ''} onChange={onFormChange} placeholder="Código *" required className="p-3 border rounded-lg w-full" />
+            <input name="name" value={form.name || ''} onChange={onFormChange} placeholder="Nombre del Servicio *" required className="p-3 border rounded-lg w-full" />
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+            <textarea name="description" value={form.description || ''} onChange={onFormChange} placeholder="Descripción" className="p-3 border rounded-lg w-full" rows={3} />
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+            <input name="price" type="number" step="0.01" value={form.price || ''} onChange={onFormChange} placeholder="Precio ($) *" required className="p-3 border rounded-lg w-full" />
+        </div>
+        <div className="flex gap-3 mt-4">
+            <button type="button" onClick={onCancel} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+            <button type="submit" className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
+                {isEditing ? `Actualizar (${sourceLabel})` : `Guardar (${sourceLabel})`}
+            </button>
+        </div>
+    </form>
+);
+
 const Services: React.FC<ServicesProps> = ({ isModal }) => {
     const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
@@ -44,7 +76,7 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
         );
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const val = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
         setForm({ ...form, [e.target.name]: val });
     };
@@ -89,25 +121,21 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
         }
     };
 
-    const ServiceForm = () => (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
-            <div className="grid grid-cols-1 gap-4">
-                 <input name="name" value={form.name || ''} onChange={handleChange} placeholder="Nombre del Servicio *" required className="p-3 border rounded-lg w-full" />
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-                <input name="price" type="number" step="0.01" value={form.price || ''} onChange={handleChange} placeholder="Precio ($) *" required className="p-3 border rounded-lg w-full" />
-            </div>
-            <div className="flex gap-3 mt-4">
-                <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-                <button type="submit" className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
-                    {isEditing ? `Actualizar (${sourceLabel})` : `Guardar (${sourceLabel})`}
-                </button>
-            </div>
-        </form>
-    );
-
     if (isModal) {
-        return <div className="bg-white p-4"><h2 className="text-xl font-bold mb-6 text-gray-800">Nuevo Servicio</h2><ServiceForm /></div>;
+        return (
+            <div className="bg-white p-4">
+                <h2 className="text-xl font-bold mb-6 text-gray-800">Nuevo Servicio</h2>
+                <ServiceForm
+                    form={form}
+                    isEditing={isEditing}
+                    mode={mode}
+                    sourceLabel={sourceLabel}
+                    onFormChange={handleChange}
+                    onSubmit={handleSubmit}
+                    onCancel={() => setShowFormModal(false)}
+                />
+            </div>
+        );
     }
 
     return (
@@ -121,7 +149,15 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
             <Modal isOpen={showFormModal} onClose={() => setShowFormModal(false)}>
                 <div className="p-6">
                     <h2 className="text-xl font-bold mb-6 text-gray-800">{isEditing ? 'Editar' : 'Nuevo'}</h2>
-                    <ServiceForm />
+                    <ServiceForm
+                        form={form}
+                        isEditing={isEditing}
+                        mode={mode}
+                        sourceLabel={sourceLabel}
+                        onFormChange={handleChange}
+                        onSubmit={handleSubmit}
+                        onCancel={() => setShowFormModal(false)}
+                    />
                 </div>
             </Modal>
             <div className="mb-6 relative">
@@ -133,18 +169,22 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50 sticky top-0 z-10">
                             <tr>
+                                <th className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500">Código</th>
                                 <th className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500">Nombre</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold uppercase text-gray-500">Descripción</th>
                                 <th className="px-6 py-4 text-right text-xs font-bold uppercase text-gray-500">Precio</th>
                                 <th className="px-6 py-4 text-right text-xs font-bold uppercase text-gray-500">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredServices.length === 0 ? (
-                                <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500">No se encontraron servicios.</td></tr>
+                                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">No se encontraron servicios.</td></tr>
                             ) : (
                                 filteredServices.map(s => (
                                     <tr key={s.id} className="hover:bg-gray-50 transition">
+                                        <td className="px-6 py-4 text-gray-900 font-mono text-sm">{s.code}</td>
                                         <td className="px-6 py-4 text-gray-900 font-medium">{s.name}</td>
+                                        <td className="px-6 py-4 text-gray-500 text-sm truncate max-w-xs">{s.description}</td>
                                         <td className="px-6 py-4 text-right font-bold text-gray-800">${s.price.toFixed(2)}</td>
                                         <td className="px-6 py-4 text-right">
                                             <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-800 mr-3"><i className="fas fa-edit"></i></button>

@@ -1,101 +1,675 @@
-
-import React, { useState, useEffect } from 'react';
-import { Quote, CompanySettings } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Quote, CompanySettings, Client, RecurringContract, Service } from '../types';
 import { dataManager } from '../services/dataManager';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { notificationService } from '../services/notificationService';
+import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 interface DashboardProps {
     settings: CompanySettings;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  const mode = dataManager.getMode();
-  const sourceLabel = mode === 'google' ? 'Drive' : 'Local';
+    // Data State
+    const [quotes, setQuotes] = useState<Quote[]>([]);
+    const [clients, setClients] = useState<Client[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
+    const [contracts, setContracts] = useState<RecurringContract[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
+    // Quick Quote State
+    const [quickClientId, setQuickClientId] = useState('');
+    const [quickServiceId, setQuickServiceId] = useState('');
+    const [quickItems, setQuickItems] = useState<Array<{ id: string; serviceId: string; serviceName: string; quantity: number; price: number }>>([]);
+    const [quickValidity, setQuickValidity] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+    const [quickQuoteNumber, setQuickQuoteNumber] = useState('');
+
+    // Search State
+    const [clientSearch, setClientSearch] = useState('');
+    const [serviceSearch, setServiceSearch] = useState('');
+
+    // Modal States
+    const [showQuickClientModal, setShowQuickClientModal] = useState(false);
+    const [showQuickServiceModal, setShowQuickServiceModal] = useState(false);
+
+    // Quick Forms
+    const [quickClientForm, setQuickClientForm] = useState({ name: '', ruc: '', phone: '', contact: '' });
+    const [quickServiceForm, setQuickServiceForm] = useState({ code: '', name: '', price: '', category: 'General' });
+
+    const mode = dataManager.getMode();
+    const sourceLabel = mode === 'google' ? 'Drive' : 'Local';
+    const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
+
+    // Load Data
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const [quotesData, clientsData, contractsData, servicesData] = await Promise.all([
+                    dataManager.fetchQuotes(),
+                    dataManager.fetchClients(),
+                    dataManager.fetchContracts(),
+                    dataManager.fetchServices()
+                ]);
+                setQuotes(quotesData);
+                setClients(clientsData);
+                setContracts(contractsData);
+                setServices(servicesData);
+                setQuickQuoteNumber(`QT-${Date.now().toString().slice(-6)}`);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, []);
+
+    // Filtered Lists
+    const filteredClients = useMemo(() => {
+        return clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()));
+    }, [clients, clientSearch]);
+
+    const filteredServices = useMemo(() => {
+        return services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase()));
+    }, [services, serviceSearch]);
+
+    // KPIs
+    const kpis = useMemo(() => {
+        const acceptedQuotes = quotes.filter(q => q.status === 'Aceptada');
+        const pendingQuotes = quotes.filter(q => q.status === 'Pendiente');
+
+        const totalSales = acceptedQuotes.reduce((sum, q) => sum + q.total, 0);
+        const totalPending = pendingQuotes.reduce((sum, q) => sum + q.total, 0);
+
+        // Renewals
+        const activeContracts = contracts.filter(c => c.status === 'active');
+        const now = new Date();
+        const renewalsThisMonth = activeContracts.filter(c => {
+            const parts = c.nextRenewalDate.split('/');
+            if (parts.length === 3) {
+                const [, month, year] = parts;
+                return parseInt(month) === now.getMonth() + 1 && parseInt(year) === now.getFullYear();
+            }
+            return false;
+        }).length;
+
+        return {
+            totalSales,
+            totalPending,
+            activeContracts: activeContracts.length,
+            renewalsThisMonth
+        };
+    }, [quotes, contracts]);
+
+    // Upcoming Renewals
+    const upcomingRenewals = useMemo(() => {
+        return contracts
+            .filter(c => c.status === 'active')
+            .sort((a, b) => {
+                const dateA = notificationService.parseDate(a.nextRenewalDate);
+                const dateB = notificationService.parseDate(b.nextRenewalDate);
+                return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+            })
+            .slice(0, 5);
+    }, [contracts]);
+
+    // Status Data for Pie Chart
+    const statusData = useMemo(() => {
+        const distribution = {
+            'Aceptada': 0,
+            'Pendiente': 0,
+            'Rechazada': 0
+        };
+        quotes.forEach(q => {
+            if (distribution[q.status as keyof typeof distribution] !== undefined) {
+                distribution[q.status as keyof typeof distribution]++;
+            }
+        });
+        return [
+            { name: 'Aceptada', value: distribution['Aceptada'] },
+            { name: 'Pendiente', value: distribution['Pendiente'] },
+            { name: 'Rechazada', value: distribution['Rechazada'] }
+        ];
+    }, [quotes]);
+
+    // Handlers
+    const handleQuickClient = async () => {
+        if (!quickClientForm.name || !quickClientForm.ruc) {
+            alert('Por favor complete al menos el nombre y RUC del cliente.');
+            return;
+        }
+
+        const newClient: Client = {
+            id: crypto.randomUUID(),
+            code: quickClientForm.ruc.slice(-4),
+            name: quickClientForm.name,
+            ruc: quickClientForm.ruc,
+            contact: quickClientForm.contact,
+            phone: quickClientForm.phone,
+            address: '',
+            city: ''
+        };
+
         try {
-            const data = await dataManager.fetchQuotes();
-            setQuotes(data);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
+            await dataManager.saveClient(newClient);
+            setClients(prev => [newClient, ...prev]);
+            setQuickClientId(newClient.id);
+            setQuickClientForm({ name: '', ruc: '', phone: '', contact: '' });
+            setShowQuickClientModal(false);
+            alert('Cliente creado con éxito.');
+        } catch (error) {
+            console.error(error);
+            alert('Error al crear el cliente.');
         }
     };
-    load();
-  }, []);
 
-  if (loading) return <div className="p-8 text-center">Cargando estadísticas...</div>;
+    const handleQuickService = async () => {
+        if (!quickServiceForm.name || !quickServiceForm.price) {
+            alert('Por favor complete al menos el nombre y precio del servicio.');
+            return;
+        }
 
-  const acceptedQuotes = quotes.filter(q => q.status === 'Aceptada');
-  const totalSales = acceptedQuotes.reduce((sum, q) => sum + q.total, 0);
-  const avgTicket = acceptedQuotes.length ? totalSales / acceptedQuotes.length : 0;
-  
-  const salesByProduct: Record<string, number> = {};
-  acceptedQuotes.forEach(q => {
-    (q.items || []).forEach(i => {
-      salesByProduct[i.name] = (salesByProduct[i.name] || 0) + (i.quantity || 1);
-    });
-  });
-  const bestSeller = Object.entries(salesByProduct).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+        const newService: Service = {
+            id: crypto.randomUUID(),
+            code: quickServiceForm.code || `SRV-${Date.now().toString().slice(-4)}`,
+            name: quickServiceForm.name,
+            description: quickServiceForm.name,
+            price: parseFloat(quickServiceForm.price),
+            category: quickServiceForm.category,
+            cost: 0
+        };
 
-  const salesByMonth: Record<string, number> = {};
-  acceptedQuotes.forEach(q => {
-      if (!q.issueDate) return;
-      const parts = q.issueDate.split('/');
-      if (parts.length === 3) {
-          const [day, month, year] = parts;
-          const key = `${year}-${month.padStart(2, '0')}`;
-          salesByMonth[key] = (salesByMonth[key] || 0) + q.total;
-      }
-  });
-  
-  const chartData = Object.keys(salesByMonth).sort().map(k => ({
-      name: k,
-      sales: salesByMonth[k]
-  }));
+        try {
+            await dataManager.saveService(newService);
+            setServices(prev => [newService, ...prev]);
+            setQuickServiceId(newService.id);
+            setQuickServiceForm({ code: '', name: '', price: '', category: 'General' });
+            setShowQuickServiceModal(false);
+            alert('Producto/Servicio creado con éxito.');
+        } catch (error) {
+            console.error(error);
+            alert('Error al crear el producto/servicio.');
+        }
+    };
 
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Dashboard de Ventas ({sourceLabel})</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-green-50 p-4 rounded-lg text-center border border-green-100">
-                <p className="text-sm text-green-800 font-semibold uppercase">Ventas (Aceptadas)</p>
-                <p className="text-3xl font-bold text-green-600">${totalSales.toFixed(2)}</p>
+    // Add item to quick quote
+    const handleAddItem = () => {
+        if (!quickServiceId) {
+            alert('Por favor seleccione un servicio.');
+            return;
+        }
+
+        const service = services.find(s => s.id === quickServiceId);
+        if (!service) return;
+
+        const newItem = {
+            id: crypto.randomUUID(),
+            serviceId: service.id,
+            serviceName: service.name,
+            quantity: 1,
+            price: service.price
+        };
+
+        setQuickItems(prev => [...prev, newItem]);
+        setQuickServiceId(''); // Clear selection
+        setServiceSearch('');
+    };
+
+    // Remove item from quick quote
+    const handleRemoveItem = (itemId: string) => {
+        setQuickItems(prev => prev.filter(item => item.id !== itemId));
+    };
+
+    // Update item quantity
+    const handleItemQuantityChange = (itemId: string, quantity: number) => {
+        setQuickItems(prev => prev.map(item =>
+            item.id === itemId ? { ...item, quantity: Math.max(1, quantity) } : item
+        ));
+    };
+
+    // Calculate totals
+    const quickTotals = useMemo(() => {
+        const subtotal = quickItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const iva = subtotal * 0.15;
+        const total = subtotal + iva;
+        return { subtotal, iva, total };
+    }, [quickItems]);
+
+    const handleQuickQuote = async () => {
+        if (!quickClientId || quickItems.length === 0) {
+            alert('Por favor seleccione un cliente y agregue al menos un servicio.');
+            return;
+        }
+
+        const client = clients.find(c => c.id === quickClientId);
+        if (!client) return;
+
+        const newQuote: Quote = {
+            id: crypto.randomUUID(),
+            number: quickQuoteNumber || `QT-${Date.now().toString().slice(-6)}`,
+            client: client,
+            issueDate: new Date().toLocaleDateString('es-ES'),
+            validityDate: (() => {
+                if (!quickValidity) return new Date().toLocaleDateString('es-ES');
+                const [y, m, d] = quickValidity.split('-');
+                return `${d}/${m}/${y}`;
+            })(),
+            items: quickItems.map(item => {
+                const service = services.find(s => s.id === item.serviceId);
+                return {
+                    id: item.id,
+                    name: item.serviceName,
+                    description: service?.description || '',
+                    price: item.price,
+                    quantity: item.quantity,
+                    code: service?.code || '',
+                    category: service?.category || 'General',
+                    cost: service?.cost || 0
+                };
+            }),
+            subtotal: quickTotals.subtotal,
+            iva: quickTotals.iva,
+            total: quickTotals.total,
+            status: 'Pendiente',
+            notes: `Cotización rápida generada desde el Dashboard.`,
+            companySettings: settings
+        };
+
+        try {
+            await dataManager.saveQuote(newQuote);
+            setQuotes(prev => [newQuote, ...prev]);
+            setQuickItems([]);
+            setQuickClientId('');
+            setClientSearch('');
+            setQuickQuoteNumber(`QT-${Date.now().toString().slice(-6)}`);
+            alert('Cotización rápida creada con éxito.');
+        } catch (error) {
+            console.error(error);
+            alert('Error al crear la cotización.');
+        }
+    };
+
+    if (loading) return <div className="p-8 text-center">Cargando escritorio...</div>;
+
+    return (
+        <div className="p-6 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center mb-8">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800">Escritorio</h2>
+                    <p className="text-gray-500">Resumen de actividad y accesos rápidos ({sourceLabel})</p>
+                </div>
+                <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
+                    {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
             </div>
-            <div className="bg-blue-50 p-4 rounded-lg text-center border border-blue-100">
-                <p className="text-sm text-blue-800 font-semibold uppercase">Ticket Promedio</p>
-                <p className="text-3xl font-bold text-blue-600">${avgTicket.toFixed(2)}</p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Widgets */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* KPI Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                            <p className="text-xs text-gray-500 uppercase font-bold mb-1">Ventas (Mes)</p>
+                            <p className="text-2xl font-bold text-gray-800">${kpis.totalSales.toFixed(0)}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                            <p className="text-xs text-gray-500 uppercase font-bold mb-1">Pendiente</p>
+                            <p className="text-2xl font-bold text-orange-600">${kpis.totalPending.toFixed(0)}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                            <p className="text-xs text-gray-500 uppercase font-bold mb-1">Contratos</p>
+                            <p className="text-2xl font-bold text-indigo-600">{kpis.activeContracts}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                            <p className="text-xs text-gray-500 uppercase font-bold mb-1">Renovaciones</p>
+                            <p className="text-2xl font-bold text-green-600">{kpis.renewalsThisMonth}</p>
+                        </div>
+                    </div>
+
+                    {/* Charts Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4">Estatus de Cotizaciones</h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={statusData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {statusData.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                        <Legend verticalAlign="bottom" height={36} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4">Próximas Renovaciones</h3>
+                            <div className="overflow-y-auto max-h-64 space-y-3">
+                                {upcomingRenewals.length === 0 ? (
+                                    <p className="text-gray-500 text-center py-8 text-sm">No hay renovaciones próximas.</p>
+                                ) : (
+                                    upcomingRenewals.map(c => (
+                                        <div key={c.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                            <div>
+                                                <p className="font-bold text-sm text-gray-800">{c.clientName}</p>
+                                                <p className="text-xs text-gray-500">{c.serviceName}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs font-bold text-indigo-600">{c.nextRenewalDate}</p>
+                                                <p className="text-xs text-gray-500">${c.amount}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column: Quick Quote */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 className="text-xl font-bold text-gray-800 mb-6">Cotizar Rápido</h3>
+
+                    <div className="space-y-4">
+                        {/* Quote Number & Periodicity */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                                <input
+                                    type="text"
+                                    value={quickQuoteNumber}
+                                    onChange={(e) => setQuickQuoteNumber(e.target.value)}
+                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-50"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Validez</label>
+                                <input
+                                    type="date"
+                                    value={quickValidity}
+                                    onChange={(e) => setQuickValidity(e.target.value)}
+                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-50"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Client Selector with Search */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                            <input
+                                type="text"
+                                placeholder="BUSCAR CLIENTE..."
+                                value={clientSearch}
+                                onChange={(e) => setClientSearch(e.target.value)}
+                                className="w-full p-2 mb-2 border border-gray-300 rounded-lg text-sm"
+                            />
+                            <div className="flex gap-2">
+                                <select
+                                    value={quickClientId}
+                                    onChange={(e) => setQuickClientId(e.target.value)}
+                                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-gray-50 max-w-full"
+                                >
+                                    <option value="">Seleccionar Cliente</option>
+                                    {filteredClients.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={() => setShowQuickClientModal(true)}
+                                    className="px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-bold text-xl flex-shrink-0"
+                                    title="Nuevo Cliente"
+                                    type="button"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Service Selector with Search */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Producto / Servicio</label>
+                            <input
+                                type="text"
+                                placeholder="BUSCAR SERVICIO..."
+                                value={serviceSearch}
+                                onChange={(e) => setServiceSearch(e.target.value)}
+                                className="w-full p-2 mb-2 border border-gray-300 rounded-lg text-sm"
+                            />
+                            <div className="flex gap-2">
+                                <select
+                                    value={quickServiceId}
+                                    onChange={(e) => setQuickServiceId(e.target.value)}
+                                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-gray-50 max-w-full"
+                                >
+                                    <option value="">Seleccionar Producto</option>
+                                    {filteredServices.map(s => (
+                                        <option key={s.id} value={s.id}>{s.name} - ${s.price.toFixed(2)}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={() => setShowQuickServiceModal(true)}
+                                    className="px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-bold text-xl flex-shrink-0"
+                                    title="Nuevo Producto"
+                                    type="button"
+                                >
+                                    +
+                                </button>
+                            </div>
+                            <button
+                                onClick={handleAddItem}
+                                disabled={!quickServiceId}
+                                className="w-full mt-2 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed uppercase text-sm tracking-wide"
+                                title="Agregar a la lista"
+                                type="button"
+                            >
+                                AÑADIR
+                            </button>
+                        </div>
+
+                        {/* Items List */}
+                        {quickItems.length > 0 && (
+                            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">
+                                    <span className="text-xs font-bold text-gray-500 uppercase">Permite modificar</span>
+                                </div>
+                                <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                                    <div className="grid grid-cols-12 gap-2 text-xs font-bold text-gray-600">
+                                        <div className="col-span-6">Servicio</div>
+                                        <div className="col-span-2 text-center">Cant.</div>
+                                        <div className="col-span-3 text-right">Precio</div>
+                                        <div className="col-span-1"></div>
+                                    </div>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto">
+                                    {quickItems.map(item => (
+                                        <div key={item.id} className="px-3 py-3 border-b border-gray-100 hover:bg-gray-50">
+                                            <div className="grid grid-cols-12 gap-2 items-center">
+                                                <div className="col-span-6 text-sm font-medium text-gray-800 truncate">
+                                                    {item.serviceName}
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={item.quantity}
+                                                        onChange={(e) => handleItemQuantityChange(item.id, parseInt(e.target.value))}
+                                                        className="w-full p-1 text-center border border-gray-300 rounded text-sm"
+                                                    />
+                                                </div>
+                                                <div className="col-span-3 text-sm font-bold text-gray-800 text-right">
+                                                    ${(item.price * item.quantity).toFixed(2)}
+                                                </div>
+                                                <div className="col-span-1 flex justify-end">
+                                                    <button
+                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        className="text-red-500 hover:text-red-700 transition"
+                                                        title="Eliminar"
+                                                    >
+                                                        <i className="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Totals Display */}
+                        {quickItems.length > 0 && (
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Subtotal:</span>
+                                    <span className="font-bold text-gray-800">${quickTotals.subtotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">IVA (15%):</span>
+                                    <span className="font-bold text-gray-800">${quickTotals.iva.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-base pt-2 border-t border-gray-300">
+                                    <span className="font-bold text-gray-800">Total:</span>
+                                    <span className="font-bold text-indigo-600 text-lg">${quickTotals.total.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                        <button
+                            onClick={handleQuickQuote}
+                            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                        >
+                            Crear Cotización
+                        </button>
+                        <p className="text-xs text-center text-gray-400 mt-4">
+                            Se creará una cotización en estado "Pendiente".
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div className="bg-yellow-50 p-4 rounded-lg text-center border border-yellow-100">
-                <p className="text-sm text-yellow-800 font-semibold uppercase">Producto Top</p>
-                <p className="text-xl md:text-2xl font-bold text-yellow-600 truncate">{bestSeller}</p>
-            </div>
-            <div className="bg-indigo-50 p-4 rounded-lg text-center border border-indigo-100">
-                <p className="text-sm text-indigo-800 font-semibold uppercase">Cotizaciones Totales</p>
-                <p className="text-3xl font-bold text-indigo-600">{quotes.length}</p>
-            </div>
+
+            {/* Quick Client Modal */}
+            {showQuickClientModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Nuevo Cliente Rápido</h3>
+                        <div className="space-y-4">
+                            <input
+                                type="text"
+                                placeholder="Nombre *"
+                                value={quickClientForm.name}
+                                onChange={(e) => setQuickClientForm({ ...quickClientForm, name: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                            />
+                            <input
+                                type="text"
+                                placeholder="RUC/CI *"
+                                value={quickClientForm.ruc}
+                                onChange={(e) => setQuickClientForm({ ...quickClientForm, ruc: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Teléfono"
+                                value={quickClientForm.phone}
+                                onChange={(e) => setQuickClientForm({ ...quickClientForm, phone: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                            />
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                value={quickClientForm.contact}
+                                onChange={(e) => setQuickClientForm({ ...quickClientForm, contact: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                            />
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setShowQuickClientModal(false)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleQuickClient}
+                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                            >
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Quick Service Modal */}
+            {showQuickServiceModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Nuevo Producto Rápido</h3>
+                        <div className="space-y-4">
+                            <input
+                                type="text"
+                                placeholder="Nombre *"
+                                value={quickServiceForm.name}
+                                onChange={(e) => setQuickServiceForm({ ...quickServiceForm, name: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Código (Opcional)"
+                                value={quickServiceForm.code}
+                                onChange={(e) => setQuickServiceForm({ ...quickServiceForm, code: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                            />
+                            <input
+                                type="number"
+                                placeholder="Precio *"
+                                value={quickServiceForm.price}
+                                onChange={(e) => setQuickServiceForm({ ...quickServiceForm, price: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                            />
+                            <select
+                                value={quickServiceForm.category}
+                                onChange={(e) => setQuickServiceForm({ ...quickServiceForm, category: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-lg"
+                            >
+                                <option value="General">General</option>
+                                <option value="Hosting">Hosting</option>
+                                <option value="Dominio">Dominio</option>
+                                <option value="Desarrollo">Desarrollo</option>
+                                <option value="Diseño">Diseño</option>
+                                <option value="Marketing">Marketing</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setShowQuickServiceModal(false)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleQuickService}
+                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                            >
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-
-        <div className="h-80 w-full bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-bold mb-4 text-gray-700">Ventas por Mes</h3>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
-                    <Bar dataKey="sales" fill={settings.accentColor} />
-                </BarChart>
-            </ResponsiveContainer>
-        </div>
-    </div>
-  );
+    );
 };
 
 export default Dashboard;
