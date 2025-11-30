@@ -3,11 +3,15 @@ import { dataManager } from '../services/dataManager';
 import { sessionService } from '../services/sessionService';
 import { deleteDatabase } from '../services/google';
 
+import { AuthMode } from '../types';
+
 interface ProfileProps {
     onLogout: () => void;
+    userProfile: any;
+    authMode: AuthMode;
 }
 
-const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
+const Profile: React.FC<ProfileProps> = ({ onLogout, userProfile, authMode }) => {
     const [stats, setStats] = useState({
         clients: 0,
         services: 0,
@@ -17,8 +21,8 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     const [loading, setLoading] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const session = sessionService.getSession();
-    const mode = dataManager.getMode();
+
+    const mode = authMode || dataManager.getMode();
 
     useEffect(() => {
         const loadStats = async () => {
@@ -85,13 +89,25 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             {/* User Info Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                 <div className="flex items-center space-x-4">
-                    <div className="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-2xl font-bold">
-                        {session?.userEmail ? session.userEmail.charAt(0).toUpperCase() : <i className="fas fa-user"></i>}
-                    </div>
+                    {userProfile?.picture ? (
+                        <img
+                            src={userProfile.picture}
+                            alt="Profile"
+                            className="h-16 w-16 rounded-full object-cover border-2 border-indigo-200"
+                            referrerPolicy="no-referrer"
+                        />
+                    ) : (
+                        <div className="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-2xl font-bold">
+                            {userProfile?.email ? userProfile.email.charAt(0).toUpperCase() : <i className="fas fa-user"></i>}
+                        </div>
+                    )}
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900">
-                            {session?.userEmail || 'Usuario Local'}
+                            {userProfile?.name || userProfile?.email || 'Usuario Local'}
                         </h3>
+                        {userProfile?.name && userProfile?.email && (
+                            <p className="text-gray-600 text-sm">{userProfile.email}</p>
+                        )}
                         <p className="text-gray-500 text-sm">
                             {mode === 'google' ? 'Conectado con Google Drive' : 'Almacenamiento Local'}
                         </p>

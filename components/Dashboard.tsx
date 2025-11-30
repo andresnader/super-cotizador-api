@@ -30,6 +30,8 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
     // Modal States
     const [showQuickClientModal, setShowQuickClientModal] = useState(false);
     const [showQuickServiceModal, setShowQuickServiceModal] = useState(false);
+    const [showClientDropdown, setShowClientDropdown] = useState(false);
+    const [showServiceDropdown, setShowServiceDropdown] = useState(false);
 
     // Quick Forms
     const [quickClientForm, setQuickClientForm] = useState({ name: '', ruc: '', phone: '', contact: '' });
@@ -153,6 +155,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
             await dataManager.saveClient(newClient);
             setClients(prev => [newClient, ...prev]);
             setQuickClientId(newClient.id);
+            setClientSearch(newClient.name); // Update search input
             setQuickClientForm({ name: '', ruc: '', phone: '', contact: '' });
             setShowQuickClientModal(false);
             alert('Cliente creado con éxito.');
@@ -160,6 +163,12 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
             console.error(error);
             alert('Error al crear el cliente.');
         }
+    };
+
+    const selectClient = (client: Client) => {
+        setQuickClientId(client.id);
+        setClientSearch(client.name);
+        setShowClientDropdown(false);
     };
 
     const handleQuickService = async () => {
@@ -182,6 +191,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
             await dataManager.saveService(newService);
             setServices(prev => [newService, ...prev]);
             setQuickServiceId(newService.id);
+            setServiceSearch(newService.name); // Update search input
             setQuickServiceForm({ code: '', name: '', price: '', category: 'General' });
             setShowQuickServiceModal(false);
             alert('Producto/Servicio creado con éxito.');
@@ -189,6 +199,12 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
             console.error(error);
             alert('Error al crear el producto/servicio.');
         }
+    };
+
+    const selectService = (service: Service) => {
+        setQuickServiceId(service.id);
+        setServiceSearch(service.name);
+        setShowServiceDropdown(false);
     };
 
     // Add item to quick quote
@@ -389,7 +405,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                     type="text"
                                     value={quickQuoteNumber}
                                     onChange={(e) => setQuickQuoteNumber(e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-50"
+                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
                                 />
                             </div>
                             <div>
@@ -398,7 +414,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                     type="date"
                                     value={quickValidity}
                                     onChange={(e) => setQuickValidity(e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-50"
+                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
                                 />
                             </div>
                         </div>
@@ -406,31 +422,37 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                         {/* Client Selector with Search */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                            <input
-                                type="text"
-                                placeholder="BUSCAR CLIENTE..."
-                                value={clientSearch}
-                                onChange={(e) => setClientSearch(e.target.value)}
-                                className="w-full p-2 mb-2 border border-gray-300 rounded-lg text-sm"
-                            />
-                            <div className="flex gap-2">
-                                <select
-                                    value={quickClientId}
-                                    onChange={(e) => setQuickClientId(e.target.value)}
-                                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-gray-50 max-w-full"
-                                >
-                                    <option value="">Seleccionar Cliente</option>
-                                    {filteredClients.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
+                            <div className="flex space-x-2 relative">
+                                <div className="w-full relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar cliente..."
+                                        value={clientSearch}
+                                        onChange={(e) => {
+                                            setClientSearch(e.target.value);
+                                            setQuickClientId('');
+                                            setShowClientDropdown(true);
+                                        }}
+                                        onFocus={() => setShowClientDropdown(true)}
+                                        onBlur={() => setTimeout(() => setShowClientDropdown(false), 200)}
+                                        className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                                    />
+                                    {showClientDropdown && (
+                                        <div className="absolute z-50 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                            {filteredClients.map(c => (
+                                                <div key={c.id} className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100" onClick={() => selectClient(c)}>
+                                                    <div className="font-medium text-gray-900">{c.name}</div>
+                                                    <div className="text-xs text-gray-500">{c.ruc}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                                 <button
                                     onClick={() => setShowQuickClientModal(true)}
-                                    className="px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-bold text-xl flex-shrink-0"
-                                    title="Nuevo Cliente"
-                                    type="button"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors"
                                 >
-                                    +
+                                    <i className="fas fa-user-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -438,37 +460,43 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                         {/* Service Selector with Search */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Producto / Servicio</label>
-                            <input
-                                type="text"
-                                placeholder="BUSCAR SERVICIO..."
-                                value={serviceSearch}
-                                onChange={(e) => setServiceSearch(e.target.value)}
-                                className="w-full p-2 mb-2 border border-gray-300 rounded-lg text-sm"
-                            />
-                            <div className="flex gap-2">
-                                <select
-                                    value={quickServiceId}
-                                    onChange={(e) => setQuickServiceId(e.target.value)}
-                                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-gray-50 max-w-full"
-                                >
-                                    <option value="">Seleccionar Producto</option>
-                                    {filteredServices.map(s => (
-                                        <option key={s.id} value={s.id}>{s.name} - ${s.price.toFixed(2)}</option>
-                                    ))}
-                                </select>
+                            <div className="flex space-x-2 relative mb-2">
+                                <div className="w-full relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar servicio..."
+                                        value={serviceSearch}
+                                        onChange={(e) => {
+                                            setServiceSearch(e.target.value);
+                                            setQuickServiceId('');
+                                            setShowServiceDropdown(true);
+                                        }}
+                                        onFocus={() => setShowServiceDropdown(true)}
+                                        onBlur={() => setTimeout(() => setShowServiceDropdown(false), 200)}
+                                        className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                                    />
+                                    {showServiceDropdown && (
+                                        <div className="absolute z-50 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                            {filteredServices.map(s => (
+                                                <div key={s.id} className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100" onClick={() => selectService(s)}>
+                                                    <div className="font-medium text-gray-900">{s.name}</div>
+                                                    <div className="text-xs flex justify-between text-gray-500"><span>{s.code}</span><span className="font-bold">${s.price}</span></div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                                 <button
                                     onClick={() => setShowQuickServiceModal(true)}
-                                    className="px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-bold text-xl flex-shrink-0"
-                                    title="Nuevo Producto"
-                                    type="button"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors"
                                 >
-                                    +
+                                    <i className="fas fa-plus"></i>
                                 </button>
                             </div>
                             <button
                                 onClick={handleAddItem}
                                 disabled={!quickServiceId}
-                                className="w-full mt-2 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed uppercase text-sm tracking-wide"
+                                className="w-full mt-2 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed uppercase text-sm tracking-wide transition-colors"
                                 title="Agregar a la lista"
                                 type="button"
                             >
@@ -503,7 +531,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                                         min="1"
                                                         value={item.quantity}
                                                         onChange={(e) => handleItemQuantityChange(item.id, parseInt(e.target.value))}
-                                                        className="w-full p-1 text-center border border-gray-300 rounded text-sm"
+                                                        className="w-full p-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
                                                     />
                                                 </div>
                                                 <div className="col-span-3 text-sm font-bold text-gray-800 text-right">
@@ -547,7 +575,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                     <div className="mt-8 pt-6 border-t border-gray-100">
                         <button
                             onClick={handleQuickQuote}
-                            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                            className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                         >
                             Crear Cotización
                         </button>
@@ -569,28 +597,28 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                 placeholder="Nombre *"
                                 value={quickClientForm.name}
                                 onChange={(e) => setQuickClientForm({ ...quickClientForm, name: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
                             />
                             <input
                                 type="text"
                                 placeholder="RUC/CI *"
                                 value={quickClientForm.ruc}
                                 onChange={(e) => setQuickClientForm({ ...quickClientForm, ruc: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
                             />
                             <input
                                 type="text"
                                 placeholder="Teléfono"
                                 value={quickClientForm.phone}
                                 onChange={(e) => setQuickClientForm({ ...quickClientForm, phone: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
                             />
                             <input
                                 type="email"
                                 placeholder="Email"
                                 value={quickClientForm.contact}
                                 onChange={(e) => setQuickClientForm({ ...quickClientForm, contact: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
                             />
                         </div>
                         <div className="flex gap-3 mt-6">
@@ -622,26 +650,26 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                 placeholder="Nombre *"
                                 value={quickServiceForm.name}
                                 onChange={(e) => setQuickServiceForm({ ...quickServiceForm, name: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
                             />
                             <input
                                 type="text"
                                 placeholder="Código (Opcional)"
                                 value={quickServiceForm.code}
                                 onChange={(e) => setQuickServiceForm({ ...quickServiceForm, code: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
                             />
                             <input
                                 type="number"
                                 placeholder="Precio *"
                                 value={quickServiceForm.price}
                                 onChange={(e) => setQuickServiceForm({ ...quickServiceForm, price: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
                             />
                             <select
                                 value={quickServiceForm.category}
                                 onChange={(e) => setQuickServiceForm({ ...quickServiceForm, category: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
                             >
                                 <option value="General">General</option>
                                 <option value="Hosting">Hosting</option>

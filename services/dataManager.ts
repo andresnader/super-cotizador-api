@@ -100,6 +100,13 @@ class DataManager implements DataService {
             : storageService.fetchContracts();
     }
 
+    async importFromSpreadsheet(sourceId: string): Promise<{ clients: number, services: number }> {
+        if (this.mode !== 'google') {
+            throw new Error('Import only available in Google mode');
+        }
+        return googleService.importFromSpreadsheet(sourceId, this.getSpreadsheetId());
+    }
+
     async saveContract(contract: RecurringContract): Promise<void> {
         return this.mode === 'google'
             ? googleService.saveContract(this.getSpreadsheetId(), contract)

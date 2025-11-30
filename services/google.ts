@@ -12,7 +12,7 @@ const SCOPES = [
 ].join(' ');
 
 // Template ID para generar documentos
-const CONTRACT_TEMPLATE_ID = '1MNE19Ymp40dTZ4Ulv31An3EWVRc8SW-ktD2H-dOFSa4';
+
 
 let tokenClient: any;
 let gapiInited = false;
@@ -276,6 +276,46 @@ export const deleteDatabase = async (fileId: string): Promise<void> => {
     }
 };
 
+/**
+ * Importa datos desde otra hoja de cálculo (Merge)
+ */
+export const importFromSpreadsheet = async (sourceSpreadsheetId: string, targetSpreadsheetId: string): Promise<{ clients: number, services: number }> => {
+    // 1. Fetch data from source
+    const sourceClients = await fetchClients(sourceSpreadsheetId);
+    const sourceServices = await fetchServices(sourceSpreadsheetId);
+
+    // 2. Fetch current data to check for duplicates
+    const currentClients = await fetchClients(targetSpreadsheetId);
+    const currentServices = await fetchServices(targetSpreadsheetId);
+
+    let newClientsCount = 0;
+    let newServicesCount = 0;
+
+    // 3. Filter and Save Clients
+    const existingClientIds = new Set(currentClients.map(c => c.ruc || c.name));
+
+    for (const client of sourceClients) {
+        const key = client.ruc || client.name;
+        if (!existingClientIds.has(key)) {
+            await saveClient(targetSpreadsheetId, { ...client, rowId: undefined });
+            newClientsCount++;
+        }
+    }
+
+    // 4. Filter and Save Services
+    const existingServiceIds = new Set(currentServices.map(s => s.code || s.name));
+
+    for (const service of sourceServices) {
+        const key = service.code || service.name;
+        if (!existingServiceIds.has(key)) {
+            await saveService(targetSpreadsheetId, { ...service, rowId: undefined });
+            newServicesCount++;
+        }
+    }
+
+    return { clients: newClientsCount, services: newServicesCount };
+};
+
 export const setGapiToken = (token: string) => {
     window.gapi.client.setToken({ access_token: token });
 };
@@ -492,23 +532,215 @@ export const deleteQuote = async (spreadsheetId: string, rowId: number) => {
     });
 };
 
+/**
+ * Helper to convert HEX color to RGB for Google Docs API
+ */
+function hexToRgb(hex: string): { red: number; green: number; blue: number } {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        red: parseInt(result[1], 16) / 255,
+        green: parseInt(result[2], 16) / 255,
+        blue: parseInt(result[3], 16) / 255
+    } : { red: 0.31, green: 0.27, blue: 0.90 }; // Default indigo
+}
+
+/**
+ * Creates a formatted Google Doc for a quote
+ */
 export const createQuoteDoc = async (quote: Quote): Promise<string> => {
     const docTitle = `Cotización ${quote.number} - ${quote.client.name}`;
+    const settings = quote.companySettings;
 
-    const copyResp = await window.gapi.client.drive.files.copy({
-        fileId: CONTRACT_TEMPLATE_ID,
-        resource: { name: docTitle }
+    // Convert company colors
+    const primaryRGB = hexToRgb(settings.primaryColor);
+    const accentRGB = hexToRgb(settings.accentColor);
+
+    // Create a new blank document
+    const createResp = await window.gapi.client.docs.documents.create({
+        resource: {
+            title: docTitle
+        }
     });
-    const newDocId = copyResp.result.id;
+    const newDocId = createResp.result.documentId;
 
-    const requests = [
-        { replaceAllText: { containsText: { text: '{{CLIENTE_NOMBRE}}', matchCase: false }, replaceText: quote.client.name || '' } },
-        { replaceAllText: { containsText: { text: '{{CLIENTE_RUC}}', matchCase: false }, replaceText: quote.client.ruc || '' } },
-        { replaceAllText: { containsText: { text: '{{COTIZACION_NUMERO}}', matchCase: false }, replaceText: quote.number || '' } },
-        { replaceAllText: { containsText: { text: '{{FECHA_EMISION}}', matchCase: false }, replaceText: quote.issueDate || '' } },
-        { replaceAllText: { containsText: { text: '{{TOTAL}}', matchCase: false }, replaceText: `$${(quote.total || 0).toFixed(2)}` } },
-    ];
+    // Build the document content using batch update requests
+    const requests: any[] = [];
+    let currentIndex = 1;
 
+    // Helper to add text with styling
+    const addText = (text: string, style?: any) => {
+        requests.push({
+            insertText: {
+                location: { index: currentIndex },
+                text: text
+            }
+        });
+        if (style) {
+            requests.push({
+                updateTextStyle: {
+                    range: {
+                        startIndex: currentIndex,
+                        endIndex: currentIndex + text.length
+                    },
+                    textStyle: style,
+                    fields: Object.keys(style).join(',')
+                }
+            });
+        }
+        currentIndex += text.length;
+    };
+
+    // Helper to add paragraph style
+    const addParagraphStyle = (startIdx: number, endIdx: number, style: any) => {
+        requests.push({
+            updateParagraphStyle: {
+                range: { startIndex: startIdx, endIndex: endIdx },
+                paragraphStyle: style,
+                fields: Object.keys(style).join(',')
+            }
+        });
+    };
+
+    // Logo placeholder (company name in color)
+    const logoStart = currentIndex;
+    addText(`${settings.name}\n`, {
+        bold: true,
+        fontSize: { magnitude: 14, unit: 'PT' },
+        foregroundColor: { color: { rgbColor: primaryRGB } }
+    });
+    addParagraphStyle(logoStart, currentIndex, { alignment: 'START' });
+
+    // Title - "COTIZACIÓN"
+    const titleStart = currentIndex;
+    addText('COTIZACIÓN\n', {
+        bold: true,
+        fontSize: { magnitude: 28, unit: 'PT' },
+        foregroundColor: { color: { rgbColor: accentRGB } }
+    });
+    addParagraphStyle(titleStart, currentIndex, { alignment: 'END' });
+
+    // Quote Number
+    const numberStart = currentIndex;
+    addText(`Nº: ${quote.number}\n\n`, {
+        fontSize: { magnitude: 12, unit: 'PT' }
+    });
+    addParagraphStyle(numberStart, currentIndex, { alignment: 'END' });
+
+    // Client and Company Info
+    addText('FACTURAR A (CLIENTE):\n', {
+        bold: true,
+        fontSize: { magnitude: 10, unit: 'PT' },
+        foregroundColor: { color: { rgbColor: { red: 0.4, green: 0.4, blue: 0.4 } } }
+    });
+    addText(`${quote.client.name}\n`, { bold: true, fontSize: { magnitude: 11, unit: 'PT' } });
+    addText(`RUC/CI: ${quote.client.ruc}\n`, { fontSize: { magnitude: 10, unit: 'PT' } });
+    if (quote.client.address) addText(`Dir: ${quote.client.address}\n`, { fontSize: { magnitude: 10, unit: 'PT' } });
+    if (quote.client.phone) addText(`Tel: ${quote.client.phone}\n`, { fontSize: { magnitude: 10, unit: 'PT' } });
+    if (quote.client.contact) addText(`Email: ${quote.client.contact}\n`, { fontSize: { magnitude: 10, unit: 'PT' } });
+    addText('\n');
+
+    addText('DE (EMISOR):\n', {
+        bold: true,
+        fontSize: { magnitude: 10, unit: 'PT' },
+        foregroundColor: { color: { rgbColor: { red: 0.4, green: 0.4, blue: 0.4 } } }
+    });
+    addText(`${settings.name}\n`, { bold: true, fontSize: { magnitude: 11, unit: 'PT' } });
+    addText(`${settings.ruc}\n${settings.address}\n${settings.contact}\n\n`, { fontSize: { magnitude: 10, unit: 'PT' } });
+
+    // Dates section
+    const datesStart = currentIndex;
+    addText(`FECHA DE EMISIÓN: ${quote.issueDate}     VÁLIDA HASTA: ${quote.validityDate}\n\n`, {
+        fontSize: { magnitude: 10, unit: 'PT' },
+        bold: true
+    });
+    addParagraphStyle(datesStart, currentIndex, { alignment: 'CENTER' });
+
+    // Table header
+    const tableHeaderStart = currentIndex;
+    addText('DESCRIPCIÓN\tCANT.\tPRECIO UNIT.\tTOTAL\n', {
+        bold: true,
+        fontSize: { magnitude: 11, unit: 'PT' },
+        foregroundColor: { color: { rgbColor: { red: 1, green: 1, blue: 1 } } }
+    });
+    requests.push({
+        updateParagraphStyle: {
+            range: { startIndex: tableHeaderStart, endIndex: currentIndex },
+            paragraphStyle: {
+                shading: {
+                    backgroundColor: { color: { rgbColor: primaryRGB } }
+                }
+            },
+            fields: 'shading'
+        }
+    });
+
+    // Items
+    quote.items.forEach((item, idx) => {
+        const itemStart = currentIndex;
+        addText(`${item.name} (${item.code})\t${item.quantity}\t$${item.price.toFixed(2)}\t$${(item.price * item.quantity).toFixed(2)}\n`, {
+            fontSize: { magnitude: 10, unit: 'PT' }
+        });
+        if (item.description) {
+            addText(`${item.description}\n`, {
+                fontSize: { magnitude: 9, unit: 'PT' },
+                foregroundColor: { color: { rgbColor: { red: 0.4, green: 0.4, blue: 0.4 } } }
+            });
+        }
+
+        if (idx % 2 === 0) {
+            requests.push({
+                updateParagraphStyle: {
+                    range: { startIndex: itemStart, endIndex: currentIndex },
+                    paragraphStyle: {
+                        shading: {
+                            backgroundColor: { color: { rgbColor: { red: 0.97, green: 0.97, blue: 0.97 } } }
+                        }
+                    },
+                    fields: 'shading'
+                }
+            });
+        }
+    });
+
+    addText('\n');
+
+    // Totals
+    const totalsStart = currentIndex;
+    addText(`Subtotal: $${quote.subtotal.toFixed(2)}\n`, { fontSize: { magnitude: 11, unit: 'PT' } });
+    addText(`IVA (15%): $${quote.iva.toFixed(2)}\n`, { fontSize: { magnitude: 11, unit: 'PT' } });
+    addParagraphStyle(totalsStart, currentIndex, { alignment: 'END' });
+
+    const totalStart = currentIndex;
+    addText(`TOTAL: $${quote.total.toFixed(2)}\n\n`, {
+        bold: true,
+        fontSize: { magnitude: 16, unit: 'PT' },
+        foregroundColor: { color: { rgbColor: accentRGB } }
+    });
+    addParagraphStyle(totalStart, currentIndex, { alignment: 'END' });
+
+    // Notes
+    if (quote.notes) {
+        addText('TÉRMINOS Y CONDICIONES / NOTAS:\n', {
+            bold: true,
+            fontSize: { magnitude: 10, unit: 'PT' }
+        });
+        addText(`${quote.notes}\n\n`, { fontSize: { magnitude: 9, unit: 'PT' } });
+    }
+
+    // Footer
+    const footerStart = currentIndex;
+    let footerText = '';
+    if (settings.website) footerText += settings.website;
+    if (settings.contact) footerText += (footerText ? '  •  ' : '') + settings.contact;
+    if (settings.whatsapp) footerText += (footerText ? '  •  ' : '') + `WhatsApp: ${settings.whatsapp}`;
+    footerText += '\nGracias por su preferencia.\n';
+    addText(footerText, {
+        fontSize: { magnitude: 9, unit: 'PT' },
+        foregroundColor: { color: { rgbColor: { red: 0.5, green: 0.5, blue: 0.5 } } }
+    });
+    addParagraphStyle(footerStart, currentIndex, { alignment: 'CENTER' });
+
+    // Apply all requests
     await window.gapi.client.docs.documents.batchUpdate({
         documentId: newDocId,
         resource: { requests }
@@ -516,6 +748,7 @@ export const createQuoteDoc = async (quote: Quote): Promise<string> => {
 
     return newDocId;
 };
+
 
 // --- CONTRACT METHODS ---
 

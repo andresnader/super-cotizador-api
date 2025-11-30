@@ -5,6 +5,7 @@ import { dataManager } from '../services/dataManager';
 import Modal from './Modal';
 import Clients from './Clients';
 import Services from './Services';
+import ShareModal from './ShareModal';
 
 interface QuoteBuilderProps {
   settings: CompanySettings;
@@ -24,6 +25,11 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
   const [quoteNotes, setQuoteNotes] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Share Modal state
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareDocUrl, setShareDocUrl] = useState('');
+  const [shareDocTitle, setShareDocTitle] = useState('');
 
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [previewService, setPreviewService] = useState<Partial<Service>>({});
@@ -216,8 +222,12 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
 
       if (onQuoteSaved) onQuoteSaved();
 
-      if (saveToDrive) {
-        alert(`Cotización guardada en Drive y Sheets.\nID Doc: ${newQuote.googleDocId}`);
+      if (saveToDrive && newQuote.googleDocId) {
+        // Open share modal instead of simple alert
+        const docUrl = `https://docs.google.com/document/d/${newQuote.googleDocId}`;
+        setShareDocUrl(docUrl);
+        setShareDocTitle(`Cotización ${newQuote.number} - ${newQuote.client.name}`);
+        setShareModalOpen(true);
       } else {
         onPrint(newQuote);
       }
@@ -414,6 +424,14 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
       <Modal isOpen={showServiceModal} onClose={() => { setShowServiceModal(false); refreshData(); }}>
         <Services isModal={true} />
       </Modal>
+
+      {/* Share Modal for Drive documents */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        documentUrl={shareDocUrl}
+        documentTitle={shareDocTitle}
+      />
     </div>
   );
 };

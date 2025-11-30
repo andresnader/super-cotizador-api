@@ -1,10 +1,66 @@
 import React, { useState } from 'react';
 import { dataManager } from '../../services/dataManager';
+import { sessionService } from '../../services/sessionService';
+import { initializeUserDatabase } from '../../services/google';
 import { generateClientTemplate, generateServiceTemplate, parseClientsCSV, parseServicesCSV } from '../../services/csvService';
 import { exportAllData, importAllData } from '../../services/storage';
 
 const DataManager: React.FC = () => {
     const [isImporting, setIsImporting] = useState(false);
+    const [currentSheetId] = useState(sessionService.getSpreadsheetId() || '');
+    const [newSheetId, setNewSheetId] = useState('');
+    const [switchSheetId, setSwitchSheetId] = useState('');
+    const mode = dataManager.getMode();
+
+    const handleCopyId = () => {
+        navigator.clipboard.writeText(currentSheetId);
+        alert('ID copiado al portapapeles');
+    };
+
+    const handleOpenDrive = () => {
+        window.open(`https://docs.google.com/spreadsheets/d/${currentSheetId}`, '_blank');
+    };
+
+    const handleCreateNewDb = async () => {
+        if (confirm('¿Crear una nueva base de datos vacía? Se desconectará de la actual y se creará una hoja nueva en tu Drive.')) {
+            try {
+                const newId = await initializeUserDatabase();
+                sessionService.saveSpreadsheetId(newId);
+                alert('Nueva base de datos creada. Recargando...');
+                window.location.reload();
+            } catch (e: any) {
+                alert('Error: ' + e.message);
+            }
+        }
+    };
+
+    const handleSwitchDb = async () => {
+        if (!switchSheetId.trim()) return;
+
+        if (confirm('¿Cambiar a esta base de datos? Se recargará la página.')) {
+            sessionService.saveSpreadsheetId(switchSheetId.trim());
+            alert('Base de datos actualizada. Recargando...');
+            window.location.reload();
+        }
+    };
+
+    const handleImportDb = async () => {
+        if (!newSheetId.trim()) return;
+
+        if (confirm('¿Importar clientes y servicios de esta base de datos? Se agregarán los registros nuevos.')) {
+            setIsImporting(true);
+            try {
+                const result = await dataManager.importFromSpreadsheet(newSheetId.trim());
+                alert(`✓ Importación exitosa:\n- ${result.clients} clientes nuevos\n- ${result.services} servicios nuevos`);
+                setNewSheetId('');
+            } catch (error: any) {
+                console.error(error);
+                alert('Error al importar. Asegúrate de tener permiso de LECTURA en la hoja de origen.');
+            } finally {
+                setIsImporting(false);
+            }
+        }
+    };
 
     const handleClientTemplateDownload = () => {
         generateClientTemplate();
@@ -102,6 +158,102 @@ const DataManager: React.FC = () => {
 
     return (
         <div className="space-y-6">
+            {/* Google Drive Connection Section */}
+            {mode === 'google' && (
+                <div className="bg-white rounded-xl border border-indigo-200 p-6 shadow-sm">
+                    <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center">
+                        <i className="fab fa-google-drive text-indigo-600 mr-2"></i>
+                        Conexión Google Drive
+                    </h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                        Gestiona la conexión con tu hoja de cálculo de Google Sheets.
+                    </p>
+
+                    <div className="space-y-6">
+                        {/* Current DB Info */}
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h3 className="font-semibold text-gray-700 mb-2">Base de Datos Actual</h3>
+                            <div className="flex gap-2 mb-3">
+                                <input
+                                    type="text"
+                                    value={currentSheetId}
+                                    readOnly
+                                    className="flex-1 bg-white border border-gray-300 text-gray-500 text-sm rounded-lg p-2.5"
+                                />
+                                <button
+                                    onClick={handleCopyId}
+                                    className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg transition"
+                                    title="Copiar ID"
+                                >
+                                    <i className="fas fa-copy"></i>
+                                </button>
+                                <button
+                                    onClick={handleOpenDrive}
+                                    className="bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-600 px-3 py-2 rounded-lg transition"
+                                    title="Abrir en Drive"
+                                >
+                                    <i className="fas fa-external-link-alt"></i>
+                                </button>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleCreateNewDb}
+                                    className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                                >
+                                    + Crear Nueva Base de Datos
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Switch DB */}
+                            <div>
+                                <h3 className="font-semibold text-gray-700 mb-2">Cambiar Base de Datos</h3>
+                                <p className="text-xs text-gray-500 mb-2">Conéctate a una base de datos existente (tuya o compartida).</p>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={switchSheetId}
+                                        onChange={(e) => setSwitchSheetId(e.target.value)}
+                                        placeholder="ID de la hoja..."
+                                        className="flex-1 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5"
+                                    />
+                                    <button
+                                        onClick={handleSwitchDb}
+                                        disabled={!switchSheetId.trim()}
+                                        className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg transition disabled:opacity-50"
+                                    >
+                                        Cambiar
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Import from another DB */}
+                            <div className="border-l border-gray-200 pl-8">
+                                <h3 className="font-semibold text-gray-700 mb-2">Importar Datos (Copiar)</h3>
+                                <p className="text-xs text-gray-500 mb-2">Copia clientes/servicios de otra hoja a la tuya actual.</p>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newSheetId}
+                                        onChange={(e) => setNewSheetId(e.target.value)}
+                                        placeholder="ID de origen..."
+                                        className="flex-1 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5"
+                                    />
+                                    <button
+                                        onClick={handleImportDb}
+                                        disabled={!newSheetId.trim() || isImporting}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition disabled:opacity-50"
+                                    >
+                                        {isImporting ? '...' : 'Importar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* CSV Import Section */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-6">Importación Masiva (CSV)</h2>

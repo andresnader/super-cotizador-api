@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { CompanySettings } from '../types';
+import ConnectionStatus from './ConnectionStatus';
 
 interface LayoutProps {
     children: React.ReactNode;
     activeTab: string;
     onTabChange: (tab: string) => void;
     settings: CompanySettings;
+    authMode?: 'local' | 'google' | null;
     onLogout?: () => void;
     userProfile?: any;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, settings, onLogout, userProfile }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, settings, authMode, onLogout, userProfile }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isOperacionesOpen, setIsOperacionesOpen] = useState(false);
 
@@ -119,13 +121,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
                         {/* Right: Secondary Nav (Desktop) */}
                         <div className="hidden md:flex items-center space-x-2">
                             <button
-                                onClick={() => onTabChange('perfil')}
-                                className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-gray-100 ${activeTab === 'perfil' ? 'text-indigo-600 bg-indigo-50' : ''}`}
-                            >
-                                <i className="fas fa-user text-lg mb-1"></i>
-                                <span>Perfil</span>
-                            </button>
-                            <button
                                 onClick={() => onTabChange('configuracion')}
                                 className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-gray-100 ${activeTab === 'configuracion' ? 'text-indigo-600 bg-indigo-50' : ''}`}
                             >
@@ -133,12 +128,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
                                 <span>Configuración</span>
                             </button>
 
-                            {userProfile && (
-                                <div className="hidden lg:flex flex-col items-end mr-2 ml-2 text-xs text-gray-500 border-l border-gray-200 pl-4">
-                                    <span className="font-bold">{userProfile.userInfo?.name || 'Usuario'}</span>
-                                    <span>{userProfile.userInfo?.email}</span>
-                                </div>
-                            )}
+                            {/* Connection Status with Profile Info */}
+                            <ConnectionStatus authMode={authMode || 'local'} userProfile={userProfile} onProfileClick={() => onTabChange('perfil')} />
                             {onLogout && (
                                 <button
                                     onClick={onLogout}

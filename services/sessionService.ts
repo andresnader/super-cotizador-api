@@ -4,6 +4,8 @@ interface SessionData {
     accessToken: string;
     expiresAt: number;
     userEmail: string;
+    userName?: string;
+    userPicture?: string;
     spreadsheetId: string | null;
     migrationCompleted: boolean;
 }
@@ -15,7 +17,7 @@ export const sessionService = {
     /**
      * Guarda la sesión del usuario en localStorage
      */
-    saveSession(token: string, expiresIn: number, userEmail: string): void {
+    saveSession(token: string, expiresIn: number, userEmail: string, userPicture?: string, userName?: string): void {
         const expiresAt = Date.now() + (expiresIn * 1000);
         const existingData = this.getSession();
 
@@ -23,6 +25,8 @@ export const sessionService = {
             accessToken: token,
             expiresAt,
             userEmail,
+            userName,
+            userPicture,
             spreadsheetId: existingData?.spreadsheetId || null,
             migrationCompleted: existingData?.migrationCompleted || false
         };
