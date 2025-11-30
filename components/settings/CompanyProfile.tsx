@@ -31,7 +31,7 @@ const CompanyProfile: React.FC<CompanyProfileProps> = ({ settings, onUpdate }) =
                         type="text"
                         value={formData.name}
                         onChange={(e) => handleChange('name', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
                         placeholder="Ameizin | Digital Solutions"
                     />
                 </div>
@@ -44,7 +44,7 @@ const CompanyProfile: React.FC<CompanyProfileProps> = ({ settings, onUpdate }) =
                         type="text"
                         value={formData.address}
                         onChange={(e) => handleChange('address', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
                         placeholder="Urdesa Norte Av. 1"
                     />
                 </div>
@@ -57,7 +57,7 @@ const CompanyProfile: React.FC<CompanyProfileProps> = ({ settings, onUpdate }) =
                         type="email"
                         value={formData.contact}
                         onChange={(e) => handleChange('contact', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
                         placeholder="andres@ameizin.ec"
                     />
                 </div>
@@ -70,7 +70,7 @@ const CompanyProfile: React.FC<CompanyProfileProps> = ({ settings, onUpdate }) =
                         type="text"
                         value={formData.ruc}
                         onChange={(e) => handleChange('ruc', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
                         placeholder="0916092075001"
                     />
                 </div>
@@ -83,7 +83,7 @@ const CompanyProfile: React.FC<CompanyProfileProps> = ({ settings, onUpdate }) =
                         type="url"
                         value={formData.website || ''}
                         onChange={(e) => handleChange('website', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
                         placeholder="https://ameizin.ec"
                     />
                 </div>

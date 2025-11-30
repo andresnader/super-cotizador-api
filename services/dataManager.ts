@@ -111,6 +111,29 @@ class DataManager implements DataService {
             ? googleService.deleteContract(this.getSpreadsheetId(), rowId)
             : storageService.deleteContract(rowId);
     }
+
+    async fetchCompanySettings(): Promise<any> {
+        if (this.mode === 'google') {
+            try {
+                const settings = await googleService.fetchCompanySettings(this.getSpreadsheetId());
+                // Merge with default settings to ensure all fields exist
+                return { ...storageService.getCompanySettings(), ...settings };
+            } catch (e) {
+                console.warn("Error fetching settings from Google, falling back to local", e);
+                return storageService.getCompanySettings();
+            }
+        }
+        return storageService.getCompanySettings();
+    }
+
+    async saveCompanySettings(settings: any): Promise<void> {
+        // Always save to local storage as backup/cache
+        storageService.saveCompanySettings(settings);
+
+        if (this.mode === 'google') {
+            await googleService.saveCompanySettings(this.getSpreadsheetId(), settings);
+        }
+    }
 }
 
 export const dataManager = new DataManager();

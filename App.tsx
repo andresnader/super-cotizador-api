@@ -16,6 +16,7 @@ import Settings from './components/Settings';
 import Statistics from './components/Statistics';
 import Contracts from './components/Contracts';
 import Modal from './components/Modal';
+import Profile from './components/Profile';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -131,6 +132,7 @@ const App: React.FC = () => {
           onTabChange={setActiveTab}
           settings={companySettings}
           userProfile={userProfile}
+          authMode={authMode}
           onLogout={handleLogout}
         >
           {activeTab === 'cotizador' && <QuoteBuilder settings={companySettings} onPrint={handlePrintRequest} editQuoteId={quoteToEditId} onQuoteSaved={() => setQuoteToEditId(null)} />}
@@ -140,6 +142,7 @@ const App: React.FC = () => {
           {activeTab === 'historial' && <History onEdit={(id) => { setQuoteToEditId(id); setActiveTab('cotizador'); }} onPrint={handlePrintRequest} />}
           {activeTab === 'clientes' && <Clients onPrint={handlePrintRequest} />}
           {activeTab === 'servicios' && <Services />}
+          {activeTab === 'perfil' && <Profile onLogout={handleLogout} />}
           {activeTab === 'configuracion' && <Settings settings={companySettings} onUpdate={setCompanySettings} />}
         </Layout>
       </div>

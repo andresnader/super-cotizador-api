@@ -18,7 +18,8 @@ export const CURATED_FONTS = [
     'Raleway',
     'Nunito',
     'Outfit',
-    'Work Sans'
+    'Work Sans',
+    'League Spartan'
 ];
 
 // Preset accent colors

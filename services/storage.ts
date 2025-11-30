@@ -149,7 +149,10 @@ export const getCompanySettings = (): CompanySettings => {
     const stored = localStorage.getItem('companySettings');
     return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
 };
-export const saveCompanySettings = (data: CompanySettings) => localStorage.setItem('companySettings', JSON.stringify(data));
+export const saveCompanySettings = async (data: CompanySettings): Promise<void> => {
+    localStorage.setItem('companySettings', JSON.stringify(data));
+    return Promise.resolve();
+};
 
 export const getQuoteCounter = (): number => parseInt(localStorage.getItem('quoteCounter') || '1');
 export const incrementQuoteCounter = () => {

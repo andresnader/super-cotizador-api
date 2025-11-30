@@ -72,7 +72,7 @@ export const initializeGoogleApi = async (): Promise<void> => {
     });
 };
 
-export const signIn = async (): Promise<{ userInfo: any, token: string, expiresIn: number }> => {
+export const signIn = async (options: { prompt?: string } = {}): Promise<{ userInfo: any, token: string, expiresIn: number }> => {
     return new Promise((resolve, reject) => {
         tokenClient.callback = async (resp: any) => {
             if (resp.error) {
@@ -93,7 +93,13 @@ export const signIn = async (): Promise<{ userInfo: any, token: string, expiresI
                 reject(err);
             }
         };
-        tokenClient.requestAccessToken({ prompt: 'consent' });
+
+        const requestConfig: any = { prompt: 'consent' };
+        if (options.prompt) {
+            requestConfig.prompt = options.prompt;
+        }
+
+        tokenClient.requestAccessToken(requestConfig);
     });
 };
 
@@ -195,6 +201,19 @@ export const initializeUserDatabase = async (): Promise<string> => {
                                 { userEnteredValue: { stringValue: 'Estado' } },
                                 { userEnteredValue: { stringValue: 'Auto Renovación' } },
                                 { userEnteredValue: { stringValue: 'Notas' } }
+                            ]
+                        }]
+                    }]
+                },
+                {
+                    properties: { title: 'Configuracion' },
+                    data: [{
+                        startRow: 0,
+                        startColumn: 0,
+                        rowData: [{
+                            values: [
+                                { userEnteredValue: { stringValue: 'Key' } },
+                                { userEnteredValue: { stringValue: 'Value' } }
                             ]
                         }]
                     }]
@@ -573,4 +592,55 @@ export const deleteContract = async (spreadsheetId: string, rowId: number) => {
         spreadsheetId,
         range: `Contratos!A${rowId}:N${rowId}`,
     });
+};
+
+// --- SETTINGS METHODS ---
+
+export const fetchCompanySettings = async (spreadsheetId: string): Promise<any> => {
+    try {
+        const response = await window.gapi.client.sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'Configuracion!A2:B',
+        });
+
+        const rows = response.result.values || [];
+        const settings: any = {};
+
+        rows.forEach((row: any[]) => {
+            if (row[0] && row[1]) {
+                try {
+                    settings[row[0]] = JSON.parse(row[1]);
+                } catch {
+                    settings[row[0]] = row[1];
+                }
+            }
+        });
+
+        return settings;
+    } catch (error) {
+        console.warn('Error fetching settings from Google Sheets', error);
+        return {};
+    }
+};
+
+export const saveCompanySettings = async (spreadsheetId: string, settings: any) => {
+    const rows = Object.entries(settings).map(([key, value]) => [
+        key,
+        JSON.stringify(value)
+    ]);
+
+    // First clear existing settings
+    await window.gapi.client.sheets.spreadsheets.values.clear({
+        spreadsheetId,
+        range: 'Configuracion!A2:B',
+    });
+
+    if (rows.length > 0) {
+        await window.gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: 'Configuracion!A2',
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: rows }
+        });
+    }
 };

@@ -18,9 +18,68 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
                 const result = reader.result as string;
                 setLogoPreview(result);
                 setFormData(prev => ({ ...prev, logo: result }));
+                analyzeLogoColors(result);
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const analyzeLogoColors = (imageSrc: string) => {
+        const img = new Image();
+        img.src = imageSrc;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            const colorCounts: { [key: string]: number } = {};
+            let maxCount = 0;
+            let dominantColor = '';
+
+            for (let i = 0; i < imageData.length; i += 4) {
+                const r = imageData[i];
+                const g = imageData[i + 1];
+                const b = imageData[i + 2];
+                const a = imageData[i + 3];
+
+                // Skip transparent and very light/dark pixels
+                if (a < 128 || (r > 240 && g > 240 && b > 240) || (r < 15 && g < 15 && b < 15)) continue;
+
+                const rgb = `${r},${g},${b}`;
+                colorCounts[rgb] = (colorCounts[rgb] || 0) + 1;
+
+                if (colorCounts[rgb] > maxCount) {
+                    maxCount = colorCounts[rgb];
+                    dominantColor = rgb;
+                }
+            }
+
+            if (dominantColor) {
+                const [r, g, b] = dominantColor.split(',').map(Number);
+                const toHex = (c: number) => {
+                    const hex = c.toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                };
+                const hexColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+
+                // Set primary color
+                setFormData(prev => ({ ...prev, primaryColor: hexColor }));
+
+                // Calculate accent color (complementary or lighter/darker)
+                // Simple complementary for now
+                const compR = 255 - r;
+                const compG = 255 - g;
+                const compB = 255 - b;
+                const accentHex = `#${toHex(compR)}${toHex(compG)}${toHex(compB)}`;
+
+                setFormData(prev => ({ ...prev, accentColor: accentHex }));
+            }
+        };
     };
 
     const handleChange = (field: keyof CompanySettings, value: string) => {
@@ -40,7 +99,8 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
         'Lato',
         'Open Sans',
         'Raleway',
-        'Nunito'
+        'Nunito',
+        'League Spartan'
     ];
 
     return (
@@ -75,6 +135,9 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
                                 className="hidden"
                             />
                         </label>
+                        <p className="text-xs text-gray-500 mt-2">
+                            Al subir un logo, se analizarán sus colores automáticamente.
+                        </p>
                     </div>
                 </div>
 
@@ -86,7 +149,7 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
                     <select
                         value={formData.typography}
                         onChange={(e) => handleChange('typography', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
                     >
                         {fonts.map(font => (
                             <option key={font} value={font}>{font}</option>
@@ -114,7 +177,7 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
                                 type="text"
                                 value={formData.primaryColor}
                                 onChange={(e) => handleChange('primaryColor', e.target.value)}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm bg-white text-gray-900"
                                 placeholder="#E23800"
                             />
                         </div>
@@ -135,7 +198,7 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
                                 type="text"
                                 value={formData.accentColor}
                                 onChange={(e) => handleChange('accentColor', e.target.value)}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm bg-white text-gray-900"
                                 placeholder="#A3A3A3"
                             />
                         </div>

@@ -4,7 +4,7 @@ import { signIn } from '../services/google';
 import { AuthMode } from '../types';
 
 interface LoginProps {
-  onLogin: (user: any, mode: AuthMode) => void;
+  onLogin: (user: any, mode: AuthMode, token?: string, expiresIn?: number) => void;
   isGoogleReady: boolean;
   error?: string | null;
 }
@@ -17,8 +17,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, isGoogleReady, error }) => {
     setIsLoading(true);
     setLocalError(null);
     try {
-      const user = await signIn();
-      onLogin(user, 'google');
+      const { userInfo, token, expiresIn } = await signIn();
+      onLogin(userInfo, 'google', token, expiresIn);
     } catch (err: any) {
       console.error("Login Failed", err);
       setLocalError("Error al iniciar sesión con Google. " + (err.message || err.error || ""));

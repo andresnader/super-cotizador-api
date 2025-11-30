@@ -246,7 +246,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
               <div className="w-full relative">
                 <input
                   type="text"
-                  className={`w-full p-2 border rounded-lg shadow-sm ${validationError && !selectedClient ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                  className={`w-full p-2 border rounded-lg shadow-sm bg-white text-gray-900 ${validationError && !selectedClient ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                   placeholder="Buscar cliente..."
                   value={clientSearch}
                   onChange={handleClientSearch}
@@ -264,17 +264,17 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
                   </div>
                 )}
               </div>
-              <button onClick={() => setShowClientModal(true)} className="bg-indigo-500 text-white px-3 py-2 rounded-lg"><i className="fas fa-user-plus"></i></button>
+              <button onClick={() => setShowClientModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors"><i className="fas fa-user-plus"></i></button>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">RUC / C.I.</label>
-            <input type="text" readOnly className="w-full p-2 bg-gray-100 border rounded-lg" value={currentClient?.ruc || ''} />
+            <input type="text" readOnly className="w-full p-2 bg-gray-100 text-gray-900 border rounded-lg" value={currentClient?.ruc || ''} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Validez</label>
-            <input type="date" className="w-full p-2 border rounded-lg" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} />
+            <input type="date" className="w-full p-2 border rounded-lg bg-white text-gray-900" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} />
           </div>
         </div>
 
@@ -286,7 +286,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
                 <div className="w-full relative">
                   <input
                     type="text"
-                    className="w-full p-2 border rounded-lg shadow-sm"
+                    className="w-full p-2 border rounded-lg shadow-sm bg-white text-gray-900"
                     placeholder="Buscar servicio..."
                     value={serviceSearch}
                     onChange={handleServiceSearch}
@@ -304,19 +304,19 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
                     </div>
                   )}
                 </div>
-                <button onClick={() => setShowServiceModal(true)} className="bg-indigo-500 text-white px-3 py-2 rounded-lg"><i className="fas fa-plus"></i></button>
+                <button onClick={() => setShowServiceModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors"><i className="fas fa-plus"></i></button>
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
-              <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-right" value={previewService.price || ''} onChange={(e) => setPreviewService({ ...previewService, price: parseFloat(e.target.value) })} />
+              <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-right bg-white text-gray-900" value={previewService.price || ''} onChange={(e) => setPreviewService({ ...previewService, price: parseFloat(e.target.value) })} />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Detalle Adicional</label>
-            <textarea className="w-full p-2 border rounded-lg text-sm" rows={2} value={customDetail} onChange={(e) => setCustomDetail(e.target.value)} />
+            <textarea className="w-full p-2 border rounded-lg text-sm bg-white text-gray-900" rows={2} value={customDetail} onChange={(e) => setCustomDetail(e.target.value)} />
           </div>
-          <button onClick={addService} className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg">Añadir a Cotización</button>
+          <button onClick={addService} className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">AÑADIR</button>
         </div>
 
         <div className="overflow-x-auto mb-6">
@@ -336,7 +336,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
                   <td className="px-4 py-3">
                     <input
                       type="text"
-                      className="w-full font-medium border-none bg-transparent focus:ring-1 focus:ring-indigo-500 rounded px-1 mb-1"
+                      className="w-full font-medium border-none bg-transparent focus:ring-1 focus:ring-indigo-500 rounded px-1 mb-1 text-gray-900"
                       value={item.name}
                       onChange={(e) => updateItem(idx, 'name', e.target.value)}
                     />
@@ -351,7 +351,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
                     <input
                       type="number"
                       min="1"
-                      className="w-16 text-center border rounded p-1"
+                      className="w-16 text-center border rounded p-1 bg-white text-gray-900"
                       value={item.quantity}
                       onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 1)}
                     />
@@ -362,7 +362,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
                       <input
                         type="number"
                         step="0.01"
-                        className="w-24 text-right border rounded p-1"
+                        className="w-24 text-right border rounded p-1 bg-white text-gray-900"
                         value={item.price}
                         onChange={(e) => updateItem(idx, 'price', parseFloat(e.target.value) || 0)}
                       />
@@ -382,7 +382,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales</label>
-          <textarea className="w-full p-2 border rounded-lg h-24" value={quoteNotes} onChange={(e) => setQuoteNotes(e.target.value)} />
+          <textarea className="w-full p-2 border rounded-lg h-24 bg-white text-gray-900" value={quoteNotes} onChange={(e) => setQuoteNotes(e.target.value)} />
         </div>
       </div>
 
@@ -397,8 +397,8 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
 
         {validationError && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{validationError}</div>}
 
-        <button onClick={() => handleGenerate(false)} disabled={isSubmitting} className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 mb-3 font-semibold disabled:opacity-50">
-          <i className="fas fa-print mr-2"></i> Generar e Imprimir
+        <button onClick={() => handleGenerate(false)} disabled={isSubmitting} className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 mb-3 font-bold shadow-md transition-colors disabled:opacity-50">
+          <i className="fas fa-print mr-2"></i> Crear Cotización
         </button>
 
         {mode === 'google' && (

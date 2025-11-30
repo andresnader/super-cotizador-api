@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CompanySettings } from '../types';
-import { saveCompanySettings } from '../services/storage';
+import { dataManager } from '../services/dataManager';
 import SettingsSidebar from './settings/SettingsSidebar';
 import CompanyProfile from './settings/CompanyProfile';
 import BrandKit from './settings/BrandKit';
@@ -15,10 +15,15 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ settings, onUpdate }) => {
     const [activeSection, setActiveSection] = useState('company');
 
-    const handleSettingsUpdate = (newSettings: CompanySettings) => {
-        saveCompanySettings(newSettings);
-        onUpdate(newSettings);
-        alert('✓ Cambios guardados exitosamente');
+    const handleSettingsUpdate = async (newSettings: CompanySettings) => {
+        try {
+            await dataManager.saveCompanySettings(newSettings);
+            onUpdate(newSettings);
+            alert('✓ Cambios guardados exitosamente');
+        } catch (error) {
+            console.error("Error saving settings:", error);
+            alert('Error al guardar los cambios');
+        }
     };
 
     return (
