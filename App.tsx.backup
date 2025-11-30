@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CompanySettings, Quote, AuthMode } from './types';
 import { getCompanySettings } from './services/storage';
-import { initializeGoogleApi, findExistingDatabase, initializeUserDatabase, setGapiToken } from './services/google';
+import { initializeGoogleApi, findExistingDatabase, initializeUserDatabase } from './services/google';
 import { dataManager } from './services/dataManager';
 import { sessionService } from './services/sessionService';
 import Login from './components/Login';
@@ -56,7 +56,7 @@ const App: React.FC = () => {
     const logoSrc = settings.logo || "https://placehold.co/200x100/eef2ff/4f46e5?text=Tu+Logo";
 
     return (
-      <div id="print-section" className="font-sans text-gray-800 print-content text-sm md:text-base">
+      <div className="font-sans text-gray-800 print-content text-sm md:text-base">
         <header className="flex flex-col md:flex-row justify-between items-start mb-8 md:mb-10 pb-4 border-b border-gray-300 gap-4">
           <div className="w-full md:w-1/2 flex justify-center md:justify-start">
             <img src={logoSrc} alt="Logo" className="max-h-20 md:max-h-24 w-auto object-contain" />
@@ -176,7 +176,7 @@ const App: React.FC = () => {
     dataManager.setMode(mode);
 
     if (mode === 'google' && token && expiresIn) {
-      sessionService.saveSession(token, expiresIn, user.email, user.picture, user.name);
+      sessionService.saveSession(token, expiresIn, user.email, user.picture);
 
       // Check/Init Database
       try {
@@ -214,14 +214,7 @@ const App: React.FC = () => {
     const restoreSession = async () => {
       const session = sessionService.getSession();
       if (session && sessionService.isTokenValid()) {
-        // CRITICAL: Set the access token in gapi.client so API calls work
-        setGapiToken(session.accessToken);
-
-        setUserProfile({
-          email: session.userEmail,
-          name: session.userName,
-          picture: session.userPicture
-        });
+        setUserProfile({ email: session.userEmail, picture: session.userPicture });
         setAuthMode('google');
         dataManager.setMode('google');
         setIsLoggedIn(true);
@@ -249,79 +242,276 @@ const App: React.FC = () => {
   }
 
   return (
-    <>
-      <Layout
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        settings={companySettings}
-        authMode={authMode}
-        userProfile={userProfile}
-        onLogout={handleLogout}
-      >
-        {activeTab === 'dashboard' && <Dashboard settings={companySettings} />}
-        {activeTab === 'cotizador' && (
-          <QuoteBuilder
-            settings={companySettings}
-            onPrint={setPreviewQuote}
-            editQuoteId={quoteToEditId}
-            onQuoteSaved={() => setQuoteToEditId(null)}
-          />
-        )}
-        {activeTab === 'estadisticas' && <Statistics settings={companySettings} />}
-        {activeTab === 'clientes' && <Clients />}
-        {activeTab === 'servicios' && <Services />}
-        {activeTab === 'historial' && (
-          <History
-            onEdit={(id) => {
-              setQuoteToEditId(id);
-              setActiveTab('cotizador');
-            }}
-            onPrint={setPreviewQuote}
-          />
-        )}
-        {activeTab === 'operaciones' && <Contracts />}
-        {activeTab === 'perfil' && (
-          <Profile
-            onLogout={handleLogout}
-            userProfile={userProfile}
-            authMode={authMode}
-          />
-        )}
-        {activeTab === 'configuracion' && (
-          <Settings
-            settings={companySettings}
-            onUpdate={setCompanySettings}
-          />
-        )}
-      </Layout>
+    <Layout
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      settings={companySettings}
+      authMode={authMode}
+      userProfile={userProfile}
+      onLogout={handleLogout}
+    >
+      {activeTab === 'dashboard' && <Dashboard settings={companySettings} />}
+      {activeTab === 'cotizador' && (
+        <QuoteBuilder
+          settings={companySettings}
+          onPrint={setPreviewQuote}
+          editQuoteId={quoteToEditId}
+          onQuoteSaved={() => setQuoteToEditId(null)}
+        />
+      )}
+      {activeTab === 'estadisticas' && <Statistics settings={companySettings} />}
+      {activeTab === 'clientes' && <Clients />}
+      {activeTab === 'servicios' && <Services />}
+      {activeTab === 'historial' && (
+        <History
+          onEdit={(id) => {
+            setQuoteToEditId(id);
+            setActiveTab('cotizador');
+          }}
+          onPrint={setPreviewQuote}
+        />
+      )}
+      {activeTab === 'operaciones' && <Contracts />}
+      {activeTab === 'perfil' && (
+        <Profile
+          onLogout={handleLogout}
+          userProfile={userProfile}
+          authMode={authMode}
+        />
+      )}
+      <p className="text-gray-700">{settings.contact}</p>
+    </div>
+          </div >
+        </div >
 
-      {previewQuote && (
-        <Modal isOpen={!!previewQuote} onClose={() => setPreviewQuote(null)} maxWidth="max-w-5xl" hideCloseButton={true}>
-          <div className="print:hidden mb-6 pb-4 border-b border-gray-200 flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">Vista Previa</h2>
-              <p className="text-sm text-gray-500 mt-1">Revise la cotización antes de imprimir.</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100 print:bg-white print:border-gray-200 gap-2">
+          <div className="w-full md:w-auto flex justify-between md:block">
+            <span className="text-gray-500 text-xs uppercase font-bold mr-2">Fecha de Emisión:</span>
+            <span className="font-medium text-gray-800">{quote.issueDate}</span>
+          </div>
+          <div className="w-full md:w-auto flex justify-between md:block">
+            <span className="text-gray-500 text-xs uppercase font-bold mr-2">Válida Hasta:</span>
+            <span className="font-medium text-gray-800">{quote.validityDate}</span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full mb-10 border-collapse min-w-full md:min-w-[600px]">
+            <thead>
+              <tr style={{ backgroundColor: settings.primaryColor, color: 'white', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                <th className="py-3 px-4 text-left font-semibold rounded-tl-lg text-xs md:text-sm uppercase tracking-wide">Descripción</th>
+                <th className="py-3 px-4 text-center font-semibold text-xs md:text-sm uppercase tracking-wide w-16 md:w-24">Cant.</th>
+                <th className="py-3 px-4 text-right font-semibold text-xs md:text-sm uppercase tracking-wide w-24 md:w-32">Precio Unit.</th>
+                <th className="py-3 px-4 text-right font-semibold rounded-tr-lg text-xs md:text-sm uppercase tracking-wide w-24 md:w-32">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {quote.items.map((item, idx) => (
+                <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 transition-colors print:hover:bg-transparent">
+                  <td className="py-4 px-4 align-top">
+                    <p className="font-bold text-gray-800">{item.name} <span className="text-xs text-gray-400 font-normal ml-1">({item.code})</span></p>
+                    {item.description && <p className="text-xs md:text-sm text-gray-600 mt-1 whitespace-pre-wrap leading-relaxed">{item.description}</p>}
+                  </td>
+                  <td className="py-4 px-4 text-center align-top text-gray-700">{item.quantity}</td>
+                  <td className="py-4 px-4 text-right align-top text-gray-700">${item.price.toFixed(2)}</td>
+                  <td className="py-4 px-4 text-right align-top font-bold text-gray-900">${(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex justify-end">
+          <div className="w-full md:w-1/2 lg:w-5/12">
+            <div className="flex justify-between py-2 border-b border-gray-100">
+              <span className="font-medium text-gray-600">Subtotal</span>
+              <span className="font-semibold text-gray-900">${quote.subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPreviewQuote(null)}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cerrar
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-md"
-              >
-                <i className="fas fa-print mr-2"></i> Imprimir PDF
-              </button>
+            <div className="flex justify-between py-2 border-b border-gray-100">
+              <span className="font-medium text-gray-600">IVA (15%)</span>
+              <span className="font-semibold text-gray-900">${quote.iva.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between py-4 mt-2 border-t-2" style={{ borderColor: settings.primaryColor }}>
+              <span className="font-bold text-xl" style={{ color: settings.accentColor }}>TOTAL</span>
+              <span className="font-bold text-2xl" style={{ color: settings.accentColor }}>${quote.total.toFixed(2)}</span>
             </div>
           </div>
-          <PrintTemplate quote={previewQuote} settings={companySettings} />
-        </Modal>
+        </div>
+
+{
+  quote.notes && (
+    <div className="mt-8 md:mt-12 pt-6 border-t border-gray-200">
+      <h4 className="font-bold text-sm mb-3 text-gray-800 uppercase tracking-wide">Términos y Condiciones / Notas:</h4>
+      <div className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100 print:bg-white print:border-gray-200">
+        {quote.notes}
+      </div>
+    </div>
+  )
+}
+
+<footer className="mt-12 md:mt-20 text-center text-gray-500 text-sm border-t border-gray-200 pt-8 print:mt-12">
+  <div className="mb-4 flex flex-col md:flex-row justify-center space-y-2 md:space-y-0 md:space-x-6">
+    {settings.website && (
+      <span style={{ color: settings.primaryColor }} className="font-medium">{settings.website}</span>
+    )}
+    {settings.contact && (
+      <span>{settings.contact}</span>
+    )}
+    {settings.whatsapp && (
+      <span style={{ color: settings.primaryColor }} className="font-medium"><i className="fab fa-whatsapp mr-1"></i>{settings.whatsapp}</span>
+    )}
+  </div>
+  <p className="italic">Gracias por su preferencia.</p>
+</footer>
+      </div >
+    );
+  };
+
+const handleLogin = async (user: any, mode: AuthMode, token?: string, expiresIn?: number) => {
+  setUserProfile(user);
+  setAuthMode(mode);
+  dataManager.setMode(mode);
+
+  if (mode === 'google' && token && expiresIn) {
+    sessionService.saveSession(token, expiresIn, user.email, user.picture);
+
+    // Check/Init Database
+    try {
+      let sheetId = sessionService.getSpreadsheetId();
+      if (!sheetId) {
+        console.log("Searching for existing database...");
+        sheetId = await findExistingDatabase();
+        if (!sheetId) {
+          console.log("Creating new database...");
+          sheetId = await initializeUserDatabase();
+        }
+        if (sheetId) {
+          sessionService.saveSpreadsheetId(sheetId);
+          console.log("Database linked:", sheetId);
+        }
+      }
+    } catch (e) {
+      console.error("Database initialization failed", e);
+      setAuthError("Error conectando con la base de datos de Google Drive.");
+    }
+  }
+
+  setIsLoggedIn(true);
+};
+
+const handleLogout = () => {
+  setIsLoggedIn(false);
+  setUserProfile(null);
+  setAuthMode(null);
+  sessionService.clearSession();
+  setActiveTab('cotizador');
+};
+
+useEffect(() => {
+  const restoreSession = async () => {
+    const session = sessionService.getSession();
+    if (session && sessionService.isTokenValid()) {
+      setUserProfile({ email: session.userEmail, picture: session.userPicture });
+      setAuthMode('google');
+      dataManager.setMode('google');
+      setIsLoggedIn(true);
+
+      // Verify DB connection on restore
+      if (!session.spreadsheetId) {
+        try {
+          const sheetId = await findExistingDatabase();
+          if (sheetId) {
+            sessionService.saveSpreadsheetId(sheetId);
+          } else {
+            console.warn("Session restored but no DB found. User might need to re-login or init DB.");
+          }
+        } catch (e) {
+          console.error("Error checking DB on restore", e);
+        }
+      }
+    }
+  };
+  restoreSession();
+}, []);
+
+if (!isLoggedIn) {
+  return <Login onLogin={handleLogin} isGoogleReady={isGoogleReady} error={authError} />;
+}
+
+return (
+  <>
+    <Layout
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      settings={companySettings}
+      authMode={authMode}
+      userProfile={userProfile}
+      onLogout={handleLogout}
+    >
+      {activeTab === 'dashboard' && <Dashboard settings={companySettings} />}
+      {activeTab === 'cotizador' && (
+        <QuoteBuilder
+          settings={companySettings}
+          onPrint={setPreviewQuote}
+          editQuoteId={quoteToEditId}
+          onQuoteSaved={() => setQuoteToEditId(null)}
+        />
       )}
-    </>
-  );
+      {activeTab === 'estadisticas' && <Statistics settings={companySettings} />}
+      {activeTab === 'clientes' && <Clients />}
+      {activeTab === 'servicios' && <Services />}
+      {activeTab === 'historial' && (
+        <History
+          onEdit={(id) => {
+            setQuoteToEditId(id);
+            setActiveTab('cotizador');
+          }}
+          onPrint={setPreviewQuote}
+        />
+      )}
+      {activeTab === 'operaciones' && <Contracts />}
+      {activeTab === 'perfil' && (
+        <Profile
+          onLogout={handleLogout}
+          userProfile={userProfile}
+          authMode={authMode}
+        />
+      )}
+      {activeTab === 'configuracion' && (
+        <Settings
+          settings={companySettings}
+          onUpdate={setCompanySettings}
+        />
+      )}
+    </Layout>
+
+    {previewQuote && (
+      <Modal isOpen={!!previewQuote} onClose={() => setPreviewQuote(null)} maxWidth="max-w-5xl" hideCloseButton={true}>
+        <div className="print:hidden mb-6 pb-4 border-b border-gray-200 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Vista Previa</h2>
+            <p className="text-sm text-gray-500 mt-1">Revise la cotización antes de imprimir.</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPreviewQuote(null)}
+              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cerrar
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-md"
+            >
+              <i className="fas fa-print mr-2"></i> Imprimir PDF
+            </button>
+          </div>
+        </div>
+        <PrintTemplate quote={previewQuote} settings={companySettings} />
+      </Modal>
+    )}
+  </>
+);
 };
 
 export default App;

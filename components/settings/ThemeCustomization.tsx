@@ -129,7 +129,7 @@ const ThemeCustomization: React.FC<ThemeCustomizationProps> = ({ settings, onUpd
                             type="text"
                             value={customColor}
                             onChange={(e) => handleAccentColorChange(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm w-28"
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm w-28 bg-white text-gray-900"
                             placeholder="#4F46E5"
                         />
                     </div>

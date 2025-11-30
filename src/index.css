@@ -95,52 +95,70 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Print styles for PDF export */
+/* Print styles for PDF export - PRODUCTION LOGIC */
 @media print {
-  .no-print {
-    display: none !important;
-  }
 
-  body {
+  body,
+  html {
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
   }
 
+  /* Hide everything first */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Only show print-section content */
+  #print-section,
+  #print-section * {
+    visibility: visible;
+  }
+
+  /* Position print-section at top */
+  #print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
+    border: none;
+    box-shadow: none;
+  }
+
+  /* Hide no-print elements */
+  .no-print,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Remove modal styling for print */
+  .modal-content-print-fix {
+    position: static !important;
+    overflow: visible !important;
+    max-height: none !important;
+    width: 100% !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide scrollbars */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Page setup */
   @page {
-    margin: 1cm;
     size: auto;
+    margin: 10mm;
   }
 
   /* Force backgrounds and borders to print */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-  }
-
-  /* Ensure KPI cards are visible */
-  [class*="bg-green-"],
-  [class*="bg-blue-"],
-  [class*="bg-purple-"],
-  [class*="bg-orange-"],
-  [class*="bg-yellow-"],
-  [class*="bg-indigo-"],
-  [class*="bg-pink-"],
-  [class*="bg-teal-"],
-  [class*="bg-red-"],
-  [class*="bg-gray-"] {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* Prevent page breaks inside cards */
-  .rounded-lg,
-  .rounded-xl {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* Ensure charts are visible */
-  svg {
-    max-width: 100% !important;
-    height: auto !important;
   }
 }
