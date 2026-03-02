@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataManager } from '../services/dataManager';
-import { sessionService } from '../services/sessionService';
-import { deleteDatabase } from '../services/google';
+
+
 
 import { AuthMode } from '../types';
 
@@ -55,22 +55,16 @@ const Profile: React.FC<ProfileProps> = ({ onLogout, userProfile, authMode }) =>
             return;
         }
 
-        if (mode === 'google') {
-            if (!confirm("Se eliminará el archivo 'Super Cotizador - Base de Datos' de tu Google Drive. ¿Confirmar?")) {
+        if (mode === 'firebase') {
+            if (!confirm("Se eliminarán todos tus datos de la nube. ¿Confirmar?")) {
                 return;
             }
         }
 
         setIsDeleting(true);
         try {
-            if (mode === 'google') {
-                const spreadsheetId = sessionService.getSpreadsheetId();
-                if (spreadsheetId) {
-                    await deleteDatabase(spreadsheetId);
-                }
-            } else {
-                localStorage.clear();
-            }
+            // Clear local storage in all modes
+            localStorage.clear();
 
             alert("Datos eliminados correctamente.");
             onLogout();
@@ -109,7 +103,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout, userProfile, authMode }) =>
                             <p className="text-gray-600 text-sm">{userProfile.email}</p>
                         )}
                         <p className="text-gray-500 text-sm">
-                            {mode === 'google' ? 'Conectado con Google Drive' : 'Almacenamiento Local'}
+                            {mode === 'firebase' ? 'Conectado con Firebase' : 'Almacenamiento Local'}
                         </p>
                     </div>
                 </div>
@@ -159,8 +153,8 @@ const Profile: React.FC<ProfileProps> = ({ onLogout, userProfile, authMode }) =>
                 <div className="p-6 bg-white">
                     <p className="text-gray-600 mb-4">
                         Si deseas eliminar toda tu información del sistema, puedes hacerlo aquí.
-                        {mode === 'google'
-                            ? " Esto eliminará el archivo de base de datos de tu Google Drive."
+                        {mode === 'firebase'
+                            ? " Esto eliminará todos tus datos de la nube."
                             : " Esto borrará todos los datos almacenados en este navegador."}
                     </p>
                     <button

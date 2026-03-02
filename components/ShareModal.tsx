@@ -11,7 +11,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, documentUrl, d
     if (!isOpen) return null;
 
     const handlePrint = () => {
-        window.open(documentUrl + '/export?format=pdf', '_blank');
+        window.open(documentUrl, '_blank');
     };
 
     const handleWhatsApp = () => {
@@ -27,7 +27,6 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, documentUrl, d
             alert('¡Link copiado al portapapeles!');
         } catch (err) {
             console.error('Error copying link:', err);
-            // Fallback for older browsers
             const textArea = document.createElement('textarea');
             textArea.value = documentUrl;
             document.body.appendChild(textArea);
@@ -53,21 +52,21 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, documentUrl, d
                         ¡Documento Guardado!
                     </h2>
                     <p className="text-gray-600">
-                        Tu cotización ha sido guardada en Google Drive
+                        Tu cotización ha sido guardada exitosamente
                     </p>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="space-y-3 mb-6">
-                    {/* Open in Drive */}
+                    {/* Open Document */}
                     <a
                         href={documentUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
                     >
-                        <i className="fas fa-external-link-alt mr-2"></i>
-                        Abrir en Google Drive
+                        <i className="fas fa-file-pdf mr-2"></i>
+                        Ver Documento
                     </a>
 
                     {/* Print */}

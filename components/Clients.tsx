@@ -12,7 +12,7 @@ interface ClientsProps {
 interface ClientFormProps {
     form: Partial<Client>;
     isEditing: boolean;
-    mode: 'google' | 'local' | null;
+    mode: 'firebase' | 'local' | null;
     onFormChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (e: React.FormEvent) => void;
     onCancel: () => void;
@@ -75,7 +75,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ form, isEditing, mode, onFormCh
                 type="submit"
                 className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold shadow-md"
             >
-                {isEditing ? `Actualizar (${mode === 'local' ? 'Local' : 'Drive'})` : `Guardar (${mode === 'local' ? 'Local' : 'Drive'})`}
+                {isEditing ? `Actualizar (${mode === 'local' ? 'Local' : 'Nube'})` : `Guardar (${mode === 'local' ? 'Local' : 'Nube'})`}
             </button>
         </div>
     </form>
@@ -98,7 +98,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const [activeDetailTab, setActiveDetailTab] = useState<'quotes' | 'contracts'>('quotes');
 
     const mode = dataManager.getMode();
-    const sourceLabel = mode === 'google' ? 'Google Sheets' : 'Local';
+    const sourceLabel = mode === 'firebase' ? 'Nube' : 'Local';
 
     const loadData = async () => {
         setLoading(true);
@@ -156,11 +156,11 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
         setShowFormModal(true);
     };
 
-    const handleDelete = async (rowId?: any) => {
-        if (!rowId) return;
+    const handleDelete = async (id: string) => {
+        if (!id) return;
         if (confirm(`¿Eliminar cliente? Esta acción es permanente en ${sourceLabel}.`)) {
             try {
-                await dataManager.deleteClient(rowId);
+                await dataManager.deleteClient(id);
                 await loadData();
             } catch (e) {
                 console.error(e);
@@ -194,9 +194,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     };
 
     const handleQuoteStatusChange = async (quote: Quote, newStatus: Quote['status']) => {
-        if (!quote.rowId) return;
         try {
-            await dataManager.updateQuoteStatus(quote.rowId, newStatus);
+            await dataManager.updateQuoteStatus(quote.id, newStatus);
             // Update local state
             setClientQuotes(clientQuotes.map(q => q.id === quote.id ? { ...q, status: newStatus } : q));
         } catch (e) {
@@ -290,7 +289,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                                     </button>
                                     <div className="flex gap-1">
                                         <button onClick={() => handleEdit(c)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"><i className="fas fa-pencil-alt"></i></button>
-                                        <button onClick={() => handleDelete(c.rowId)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition"><i className="fas fa-trash"></i></button>
+                                        <button onClick={() => handleDelete(c.id)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition"><i className="fas fa-trash"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -373,8 +372,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                                                         </td>
                                                         <td className="px-4 py-3 text-center text-sm">
                                                             <div className="flex justify-center items-center space-x-3">
-                                                                {q.googleDocId && (
-                                                                    <a href={`https://docs.google.com/document/d/${q.googleDocId}/edit`} target="_blank" className="text-blue-600 hover:text-blue-800" title="Ver en Drive">
+                                                                {q.pdfUrl && (
+                                                                    <a href={q.pdfUrl} target="_blank" className="text-blue-600 hover:text-blue-800" title="Ver PDF">
                                                                         <i className="fas fa-file-alt"></i>
                                                                     </a>
                                                                 )}

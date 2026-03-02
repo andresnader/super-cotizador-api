@@ -1,8 +1,7 @@
 
-import { AuthMode, Client, Service, Quote, DataService, RecurringContract } from '../types';
-import * as googleService from './google';
+import { AuthMode, Client, Service, Quote, DataService, RecurringContract, CompanySettings } from '../types';
+import * as firestoreService from './firestore';
 import * as storageService from './storage';
-import { sessionService } from './sessionService';
 
 class DataManager implements DataService {
     private mode: AuthMode = 'local';
@@ -15,130 +14,108 @@ class DataManager implements DataService {
         return this.mode;
     }
 
-    private getSpreadsheetId(): string {
-        if (this.mode !== 'google') {
-            throw new Error('Spreadsheet ID only available in Google mode');
-        }
-        const id = sessionService.getSpreadsheetId();
-        if (!id) {
-            throw new Error('No spreadsheet ID found. Please initialize database first.');
-        }
-        return id;
+    private isFirebase(): boolean {
+        return this.mode === 'firebase';
     }
 
     async fetchClients(): Promise<Client[]> {
-        return this.mode === 'google'
-            ? googleService.fetchClients(this.getSpreadsheetId())
+        return this.isFirebase()
+            ? firestoreService.fetchClients()
             : storageService.fetchClients();
     }
 
     async saveClient(client: Client): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.saveClient(this.getSpreadsheetId(), client)
+        return this.isFirebase()
+            ? firestoreService.saveClient(client)
             : storageService.saveClient(client);
     }
 
-    async deleteClient(rowId: any): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.deleteClient(this.getSpreadsheetId(), rowId)
-            : storageService.deleteClient(rowId);
+    async deleteClient(id: string): Promise<void> {
+        return this.isFirebase()
+            ? firestoreService.deleteClient(id)
+            : storageService.deleteClient(id);
     }
 
     async fetchServices(): Promise<Service[]> {
-        return this.mode === 'google'
-            ? googleService.fetchServices(this.getSpreadsheetId())
+        return this.isFirebase()
+            ? firestoreService.fetchServices()
             : storageService.fetchServices();
     }
 
     async saveService(service: Service): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.saveService(this.getSpreadsheetId(), service)
+        return this.isFirebase()
+            ? firestoreService.saveService(service)
             : storageService.saveService(service);
     }
 
-    async deleteService(rowId: any): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.deleteService(this.getSpreadsheetId(), rowId)
-            : storageService.deleteService(rowId);
+    async deleteService(id: string): Promise<void> {
+        return this.isFirebase()
+            ? firestoreService.deleteService(id)
+            : storageService.deleteService(id);
     }
 
     async fetchQuotes(): Promise<Quote[]> {
-        return this.mode === 'google'
-            ? googleService.fetchQuotes(this.getSpreadsheetId())
+        return this.isFirebase()
+            ? firestoreService.fetchQuotes()
             : storageService.fetchQuotes();
     }
 
     async saveQuote(quote: Quote): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.saveQuote(this.getSpreadsheetId(), quote)
+        return this.isFirebase()
+            ? firestoreService.saveQuote(quote)
             : storageService.saveQuote(quote);
     }
 
-    async deleteQuote(rowId: any): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.deleteQuote(this.getSpreadsheetId(), rowId)
-            : storageService.deleteQuote(rowId);
+    async deleteQuote(id: string): Promise<void> {
+        return this.isFirebase()
+            ? firestoreService.deleteQuote(id)
+            : storageService.deleteQuote(id);
     }
 
-    async updateQuoteStatus(rowId: any, status: string): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.updateQuoteStatus(this.getSpreadsheetId(), rowId, status)
-            : storageService.updateQuoteStatus(rowId, status);
-    }
-
-    async createQuoteDoc(quote: Quote): Promise<string> {
-        if (this.mode === 'google') {
-            return googleService.createQuoteDoc(quote);
-        } else {
-            throw new Error("La generación de Google Docs no está disponible en modo local.");
-        }
+    async updateQuoteStatus(id: string, status: string): Promise<void> {
+        return this.isFirebase()
+            ? firestoreService.updateQuoteStatus(id, status)
+            : storageService.updateQuoteStatus(id, status);
     }
 
     async fetchContracts(): Promise<RecurringContract[]> {
-        return this.mode === 'google'
-            ? googleService.fetchContracts(this.getSpreadsheetId())
+        return this.isFirebase()
+            ? firestoreService.fetchContracts()
             : storageService.fetchContracts();
     }
 
-    async importFromSpreadsheet(sourceId: string): Promise<{ clients: number, services: number }> {
-        if (this.mode !== 'google') {
-            throw new Error('Import only available in Google mode');
-        }
-        return googleService.importFromSpreadsheet(sourceId, this.getSpreadsheetId());
-    }
-
     async saveContract(contract: RecurringContract): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.saveContract(this.getSpreadsheetId(), contract)
+        return this.isFirebase()
+            ? firestoreService.saveContract(contract)
             : storageService.saveContract(contract);
     }
 
-    async deleteContract(rowId: any): Promise<void> {
-        return this.mode === 'google'
-            ? googleService.deleteContract(this.getSpreadsheetId(), rowId)
-            : storageService.deleteContract(rowId);
+    async deleteContract(id: string): Promise<void> {
+        return this.isFirebase()
+            ? firestoreService.deleteContract(id)
+            : storageService.deleteContract(id);
     }
 
-    async fetchCompanySettings(): Promise<any> {
-        if (this.mode === 'google') {
+    async fetchCompanySettings(): Promise<CompanySettings> {
+        if (this.isFirebase()) {
             try {
-                const settings = await googleService.fetchCompanySettings(this.getSpreadsheetId());
+                const settings = await firestoreService.fetchCompanySettings();
                 // Merge with default settings to ensure all fields exist
                 return { ...storageService.getCompanySettings(), ...settings };
             } catch (e) {
-                console.warn("Error fetching settings from Google, falling back to local", e);
+                console.warn("Error fetching settings from Firestore, falling back to local", e);
                 return storageService.getCompanySettings();
             }
         }
         return storageService.getCompanySettings();
     }
 
-    async saveCompanySettings(settings: any): Promise<void> {
+    async saveCompanySettings(settings: CompanySettings): Promise<void> {
         // Always save to local storage as backup/cache
         storageService.saveCompanySettings(settings);
 
-        if (this.mode === 'google') {
-            await googleService.saveCompanySettings(this.getSpreadsheetId(), settings);
+        if (this.isFirebase()) {
+            await firestoreService.saveCompanySettings(settings);
         }
     }
 }

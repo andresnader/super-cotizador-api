@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'ameizin-img.png'],
       manifest: {
         name: 'Ameizin Digital Solutions',
         short_name: 'Ameizin',
@@ -62,5 +62,17 @@ export default defineConfig({
       }
     })
   ],
-  base: '/cotizador/', 
+  base: '/cotizador/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'vendor-ui': ['react', 'react-dom', 'recharts'],
+          'vendor-utils': ['html2canvas', 'jspdf']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  }
 })

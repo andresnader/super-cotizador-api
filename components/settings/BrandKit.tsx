@@ -9,18 +9,31 @@ interface BrandKitProps {
 const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
     const [formData, setFormData] = useState<CompanySettings>(settings);
     const [logoPreview, setLogoPreview] = useState<string>(settings.logo || '');
+    const [logoUrl, setLogoUrl] = useState<string>(
+        settings.logo && !settings.logo.startsWith('data:') ? settings.logo : ''
+    );
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const result = reader.result as string;
-                setLogoPreview(result);
-                setFormData(prev => ({ ...prev, logo: result }));
-                analyzeLogoColors(result);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const result = reader.result as string;
+            setLogoPreview(result);
+            setFormData(prev => ({ ...prev, logo: result }));
+            setLogoUrl('');
+            analyzeLogoColors(result);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const applyLogoUrl = () => {
+        const url = logoUrl.trim();
+        if (url) {
+            setFormData(prev => ({ ...prev, logo: url }));
+            setLogoPreview(url);
+            analyzeLogoColors(url);
         }
     };
 
@@ -108,12 +121,12 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
             <h2 className="text-xl font-bold text-gray-800 mb-6">Configuración</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Logo Upload */}
+                {/* Logo */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         Logo
                     </label>
-                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                         {logoPreview ? (
                             <img
                                 src={logoPreview}
@@ -125,9 +138,27 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
                                 <i className="fas fa-image text-4xl"></i>
                             </div>
                         )}
-                        <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+
+                        {/* URL input */}
+                        <div className="mb-3">
+                            <input
+                                type="text"
+                                value={logoUrl}
+                                onChange={(e) => setLogoUrl(e.target.value)}
+                                onBlur={applyLogoUrl}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyLogoUrl(); } }}
+                                placeholder="https://ameizin.red/cotizador/logo.png"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white text-gray-900"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Pega la URL de tu logo y presiona Enter o haz click afuera
+                            </p>
+                        </div>
+
+                        {/* File upload */}
+                        <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm">
                             <i className="fas fa-upload mr-2"></i>
-                            Subir Logo
+                            Subir archivo
                             <input
                                 type="file"
                                 accept="image/*"
@@ -135,9 +166,6 @@ const BrandKit: React.FC<BrandKitProps> = ({ settings, onUpdate }) => {
                                 className="hidden"
                             />
                         </label>
-                        <p className="text-xs text-gray-500 mt-2">
-                            Al subir un logo, se analizarán sus colores automáticamente.
-                        </p>
                     </div>
                 </div>
 

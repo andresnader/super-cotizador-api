@@ -1,34 +1,37 @@
 
 import React, { useState } from 'react';
-import { signIn } from '../services/google';
+import { signInWithGoogle } from '../services/firebaseAuth';
 import { AuthMode } from '../types';
 
 interface LoginProps {
-  onLogin: (user: any, mode: AuthMode, token?: string, expiresIn?: number) => void;
-  isGoogleReady: boolean;
-  error?: string | null;
+  onLogin: (user: any, mode: AuthMode) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, isGoogleReady, error }) => {
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleGoogleLogin = async () => {
+  const handleFirebaseLogin = async () => {
     setIsLoading(true);
     setLocalError(null);
     try {
-      const { userInfo, token, expiresIn } = await signIn();
-      onLogin(userInfo, 'google', token, expiresIn);
+      const { userInfo } = await signInWithGoogle();
+      onLogin(userInfo, 'firebase');
     } catch (err: any) {
       console.error("Login Failed", err);
-      setLocalError("Error al iniciar sesión con Google. " + (err.message || err.error || ""));
+      if (err.code === 'auth/popup-closed-by-user') {
+        setLocalError("Se cerró la ventana de inicio de sesión.");
+      } else if (err.code === 'auth/network-request-failed') {
+        setLocalError("Error de red. Verifica tu conexión a internet.");
+      } else {
+        setLocalError("Error al iniciar sesión con Google. " + (err.message || ""));
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLocalLogin = () => {
-    // Mock user for local mode
     const localUser = { name: 'Usuario Local', email: 'local@device', picture: '' };
     onLogin(localUser, 'local');
   };
@@ -40,18 +43,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, isGoogleReady, error }) => {
         {/* Left Side: Intro */}
         <div className="md:w-1/2 md:pr-8 flex flex-col justify-center border-b md:border-b-0 md:border-r border-gray-200 pb-8 md:pb-0 mb-8 md:mb-0">
           <div className="flex items-start mb-4">
-            <div className="bg-orange-500 rounded p-1 mr-3 flex-shrink-0">
-              <i className="fas fa-check text-white text-xl"></i>
-            </div>
+            <img
+              src={import.meta.env.BASE_URL + 'ameizin-img.png'}
+              alt="Ameizin Logo"
+              className="w-10 h-10 rounded mr-3 flex-shrink-0"
+            />
             <h1 className="text-2xl font-bold text-gray-800">Cotizador integral para emprendedores</h1>
           </div>
           <p className="text-gray-600 text-base leading-relaxed">
             He diseñado esta herramienta pensando en nuestras necesidades para poder salir adelante. He dedicado horas a culminar este cotizador con sistema de gestión de tu emprendimiento, los datos son únicamente tuyos, eres más que bienvenido a usarla siempre que la necesites.
           </p>
-          {(error || localError) && (
+          {localError && (
             <div className="mt-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
               <i className="fas fa-exclamation-circle mr-2"></i>
-              {error || localError}
+              {localError}
             </div>
           )}
         </div>
@@ -59,12 +64,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, isGoogleReady, error }) => {
         {/* Right Side: Options */}
         <div className="md:w-1/2 md:pl-8 flex flex-col justify-center space-y-6">
 
-          {/* Option 1: Google */}
+          {/* Option 1: Firebase (Google) */}
           <div className="group relative">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
             <button
-              onClick={handleGoogleLogin}
-              disabled={!isGoogleReady || isLoading}
+              onClick={handleFirebaseLogin}
+              disabled={isLoading}
               className="relative w-full bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all text-left disabled:opacity-70 disabled:cursor-not-allowed flex items-center"
             >
               <div className="bg-blue-50 p-3 rounded-full mr-4">
@@ -76,8 +81,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, isGoogleReady, error }) => {
               </div>
               <div>
                 <h3 className="font-bold text-gray-800 text-lg">Modo Nube (Google)</h3>
-                <p className="text-sm text-gray-500">Sincroniza con Drive, Sheets y Docs. Ideal para equipos.</p>
-                {!isGoogleReady && !error && <p className="text-xs text-orange-500 mt-1">Cargando servicios...</p>}
+                <p className="text-sm text-gray-500">Sincroniza tus datos en la nube. Accesible desde cualquier dispositivo.</p>
               </div>
             </button>
           </div>

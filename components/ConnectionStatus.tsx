@@ -23,20 +23,20 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ authMode, userProfi
         };
     }, []);
 
-    const isGoogle = authMode === 'google';
+    const isFirebase = authMode === 'firebase';
 
     return (
         <div
-            className={`flex items-center gap-3 px-3 py-1 bg-gray-50 rounded-lg border border-gray-100 ${isGoogle && onProfileClick ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''}`}
-            onClick={() => isGoogle && onProfileClick && onProfileClick()}
-            title={isGoogle ? "Click para ver perfil" : undefined}
+            className={`flex items-center gap-3 px-3 py-1 bg-gray-50 rounded-lg border border-gray-100 ${isFirebase && onProfileClick ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''}`}
+            onClick={() => isFirebase && onProfileClick && onProfileClick()}
+            title={isFirebase ? "Click para ver perfil" : undefined}
         >
             {/* Avatar / Icon */}
-            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${isGoogle ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-600'}`}>
-                {isGoogle && userProfile?.picture ? (
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${isFirebase ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-600'}`}>
+                {isFirebase && userProfile?.picture ? (
                     <img src={userProfile.picture} alt="Profile" className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                    <i className={`fas ${isGoogle ? 'fa-user' : 'fa-laptop'}`}></i>
+                    <i className={`fas ${isFirebase ? 'fa-user' : 'fa-laptop'}`}></i>
                 )}
             </div>
 
@@ -44,7 +44,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ authMode, userProfi
             <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-gray-800">
-                        {isGoogle ? (userProfile?.email || 'Usuario Google') : 'Modo Local'}
+                        {isFirebase ? (userProfile?.email || 'Usuario Google') : 'Modo Local'}
                     </span>
                     {/* Connection Dot */}
                     <div
@@ -53,7 +53,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ authMode, userProfi
                     ></div>
                 </div>
                 <span className="text-[10px] text-gray-500 leading-tight">
-                    {isGoogle ? 'Sincronizado' : 'Solo en este dispositivo'}
+                    {isFirebase ? 'Sincronizado' : 'Solo en este dispositivo'}
                 </span>
             </div>
         </div>

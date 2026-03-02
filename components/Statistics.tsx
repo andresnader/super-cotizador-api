@@ -26,7 +26,7 @@ const Statistics: React.FC<StatisticsProps> = ({ settings }) => {
     const [selectedStatus, setSelectedStatus] = useState<'all' | Quote['status']>('all');
 
     const mode = dataManager.getMode();
-    const sourceLabel = mode === 'google' ? 'Drive' : 'Local';
+    const sourceLabel = mode === 'firebase' ? 'Nube' : 'Local';
 
     useEffect(() => {
         const load = async () => {
@@ -497,7 +497,12 @@ const Statistics: React.FC<StatisticsProps> = ({ settings }) => {
                                         </span>
                                     </div>
                                     <div className="mt-2 flex justify-between items-center">
-                                        <span className="text-xs text-gray-500 capitalize">{c.period}</span>
+                                        <span className="text-xs text-gray-500 capitalize">
+                                            {c.period === 'monthly' ? 'Mensual' :
+                                                c.period === 'quarterly' ? 'Trimestral' :
+                                                    c.period === 'semiannual' ? 'Semestral' :
+                                                        c.period === 'annual' ? 'Anual' : c.period}
+                                        </span>
                                         <span className="font-bold text-gray-700 text-sm">${c.amount.toFixed(2)}</span>
                                     </div>
                                 </div>

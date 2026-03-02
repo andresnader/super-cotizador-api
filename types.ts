@@ -7,32 +7,29 @@ export interface ThemePreferences {
   fontFamily: string;
 }
 
-export type AuthMode = 'google' | 'local' | null;
+export type AuthMode = 'firebase' | 'local' | null;
 
 export interface DataService {
   fetchClients: () => Promise<Client[]>;
   saveClient: (client: Client) => Promise<void>;
-  deleteClient: (rowId: any) => Promise<void>; // rowId can be string (ID) for local or number for sheets
+  deleteClient: (id: string) => Promise<void>;
 
   fetchServices: () => Promise<Service[]>;
   saveService: (service: Service) => Promise<void>;
-  deleteService: (rowId: any) => Promise<void>;
+  deleteService: (id: string) => Promise<void>;
 
   fetchQuotes: () => Promise<Quote[]>;
   saveQuote: (quote: Quote) => Promise<void>;
-  deleteQuote: (rowId: any) => Promise<void>;
-  updateQuoteStatus: (rowId: any, status: string) => Promise<void>;
+  deleteQuote: (id: string) => Promise<void>;
+  updateQuoteStatus: (id: string, status: string) => Promise<void>;
 
   fetchContracts: () => Promise<RecurringContract[]>;
   saveContract: (contract: RecurringContract) => Promise<void>;
-  deleteContract: (rowId: any) => Promise<void>;
-
-  createQuoteDoc?: (quote: Quote) => Promise<string>; // Optional for local
+  deleteContract: (id: string) => Promise<void>;
 }
 
 export interface Client {
   id: string;
-  rowId?: any; // number for sheets, string/undefined for local
   code: string;
   name: string;
   ruc: string;
@@ -44,7 +41,6 @@ export interface Client {
 
 export interface Service {
   id: string;
-  rowId?: any;
   code: string;
   name: string;
   description: string;
@@ -66,7 +62,6 @@ export interface QuoteItem {
 
 export interface Quote {
   id: string;
-  rowId?: any;
   number: string;
   issueDate: string;
   validityDate: string;
@@ -77,7 +72,7 @@ export interface Quote {
   total: number;
   notes: string;
   status: 'Pendiente' | 'Aceptada' | 'Rechazada';
-  googleDocId?: string | null;
+  pdfUrl?: string | null;
   companySettings: CompanySettings;
 }
 
@@ -109,13 +104,12 @@ export type ContractPeriod = 'monthly' | 'quarterly' | 'semiannual' | 'annual';
 
 export interface RecurringContract {
   id: string;
-  rowId?: any;
   clientId: string;
   clientName: string;
   serviceType: ContractType;
   serviceName: string;
   description: string;
-  provider: string; // Operador/Proveedor donde está alojado el servicio
+  provider: string;
   amount: number;
   period: ContractPeriod;
   startDate: string; // DD/MM/YYYY

@@ -5,7 +5,6 @@ import { dataManager } from '../services/dataManager';
 import Modal from './Modal';
 import Clients from './Clients';
 import Services from './Services';
-import ShareModal from './ShareModal';
 
 interface QuoteBuilderProps {
   settings: CompanySettings;
@@ -26,10 +25,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Share Modal state
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [shareDocUrl, setShareDocUrl] = useState('');
-  const [shareDocTitle, setShareDocTitle] = useState('');
+
 
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [previewService, setPreviewService] = useState<Partial<Service>>({});
@@ -44,7 +40,8 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const mode = dataManager.getMode();
+
+
 
   const loadData = async () => {
     try {
@@ -73,11 +70,30 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
             setClientSearch(quoteToEdit.client.name);
             setQuoteItems(quoteToEdit.items);
             setQuoteNotes(quoteToEdit.notes);
-            setQuoteDate(new Date(quoteToEdit.validityDate).toISOString().slice(0, 10));
+            // Ensure validity date is correctly formatted for the input
+            try {
+              // The date might be in dd/mm/yyyy format from toLocaleDateString('es-EC')
+              const parts = quoteToEdit.validityDate.split('/');
+              if (parts.length === 3) {
+                const formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                setQuoteDate(formattedDate);
+              } else {
+                setQuoteDate(new Date(quoteToEdit.validityDate).toISOString().slice(0, 10));
+              }
+            } catch (e) {
+              console.warn("Date parsing fallback", e);
+            }
           }
         } catch (e) {
           console.error('Error loading quote for edit', e);
         }
+      } else {
+        // Reset form for new quote
+        setSelectedClient('');
+        setClientSearch('');
+        setQuoteItems([]);
+        setQuoteNotes('');
+        setQuoteDate(new Date().toISOString().slice(0, 10));
       }
     };
     loadQuoteForEdit();
@@ -174,7 +190,7 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
     return { subtotal: sub, iva: i, total: sub + i };
   })();
 
-  const handleGenerate = async (saveToDrive: boolean) => {
+  const handleGenerate = async () => {
     if (!selectedClient) { setValidationError("Seleccione un cliente"); return; }
     if (quoteItems.length === 0) { setValidationError("Agregue items"); return; }
 
@@ -206,11 +222,6 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
         companySettings: settings
       };
 
-      if (saveToDrive && mode === 'google') {
-        const docId = await dataManager.createQuoteDoc(newQuote);
-        newQuote.googleDocId = docId;
-      }
-
       await dataManager.saveQuote(newQuote);
 
       setHistoryCount(prev => prev + 1);
@@ -222,19 +233,12 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
 
       if (onQuoteSaved) onQuoteSaved();
 
-      if (saveToDrive && newQuote.googleDocId) {
-        // Open share modal instead of simple alert
-        const docUrl = `https://docs.google.com/document/d/${newQuote.googleDocId}`;
-        setShareDocUrl(docUrl);
-        setShareDocTitle(`Cotización ${newQuote.number} - ${newQuote.client.name}`);
-        setShareModalOpen(true);
-      } else {
-        onPrint(newQuote);
-      }
+      // Always open print preview
+      onPrint(newQuote);
 
     } catch (e: any) {
       console.error(e);
-      setValidationError("Error al generar: " + (e.message || e.result?.error?.message));
+      setValidationError("Error al generar: " + (e.message || ''));
     } finally {
       setIsSubmitting(false);
     }
@@ -407,15 +411,9 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
 
         {validationError && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{validationError}</div>}
 
-        <button onClick={() => handleGenerate(false)} disabled={isSubmitting} className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 mb-3 font-bold shadow-md transition-colors disabled:opacity-50">
+        <button onClick={() => handleGenerate()} disabled={isSubmitting} className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 mb-3 font-bold shadow-md transition-colors disabled:opacity-50">
           <i className="fas fa-print mr-2"></i> Crear Cotización
         </button>
-
-        {mode === 'google' && (
-          <button onClick={() => handleGenerate(true)} disabled={isSubmitting} className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50">
-            <i className="fab fa-google-drive mr-2"></i> Generar y Guardar (Drive)
-          </button>
-        )}
       </div>
 
       <Modal isOpen={showClientModal} onClose={() => { setShowClientModal(false); refreshData(); }}>
@@ -425,13 +423,6 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
         <Services isModal={true} />
       </Modal>
 
-      {/* Share Modal for Drive documents */}
-      <ShareModal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        documentUrl={shareDocUrl}
-        documentTitle={shareDocTitle}
-      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CompanySettings } from '../types';
+import { CompanySettings, AuthMode } from '../types';
 import ConnectionStatus from './ConnectionStatus';
 
 interface LayoutProps {
@@ -7,7 +7,7 @@ interface LayoutProps {
     activeTab: string;
     onTabChange: (tab: string) => void;
     settings: CompanySettings;
-    authMode?: 'local' | 'google' | null;
+    authMode?: AuthMode;
     onLogout?: () => void;
     userProfile?: any;
 }

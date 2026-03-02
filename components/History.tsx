@@ -14,7 +14,7 @@ const History: React.FC<HistoryProps> = ({ onPrint, onEdit }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const mode = dataManager.getMode();
-    const sourceLabel = mode === 'google' ? 'Drive' : 'Local';
+    const sourceLabel = mode === 'firebase' ? 'Nube' : 'Local';
 
     const load = async () => {
         setLoading(true);
@@ -33,9 +33,8 @@ const History: React.FC<HistoryProps> = ({ onPrint, onEdit }) => {
     }, []);
 
     const handleStatusChange = async (quote: Quote, status: Quote['status']) => {
-        if (!quote.rowId) return;
         try {
-            await dataManager.updateQuoteStatus(quote.rowId, status);
+            await dataManager.updateQuoteStatus(quote.id, status);
             setQuotes(quotes.map(q => q.id === quote.id ? { ...q, status } : q));
         } catch (e) {
             console.error(e);
@@ -44,10 +43,9 @@ const History: React.FC<HistoryProps> = ({ onPrint, onEdit }) => {
     };
 
     const handleDelete = async (quote: Quote) => {
-        if (!quote.rowId) return;
         if (confirm(`¿Estás seguro de eliminar la cotización ${quote.number}?`)) {
             try {
-                await dataManager.deleteQuote(quote.rowId);
+                await dataManager.deleteQuote(quote.id);
                 await load();
             } catch (e) {
                 console.error(e);
@@ -111,9 +109,6 @@ const History: React.FC<HistoryProps> = ({ onPrint, onEdit }) => {
                                         </select>
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        {q.googleDocId && (
-                                            <a href={`https://docs.google.com/document/d/${q.googleDocId}/edit`} target="_blank" className="text-blue-600 hover:text-blue-900 mr-3" title="Ver en Drive"><i className="fas fa-link"></i></a>
-                                        )}
                                         <button onClick={() => onPrint(q)} className="text-indigo-600 hover:text-indigo-900 mr-3" title="Imprimir"><i className="fas fa-print"></i></button>
                                         <button onClick={() => onEdit(q.id)} className="text-green-600 hover:text-green-900 mr-3" title="Editar"><i className="fas fa-edit"></i></button>
                                         <button onClick={() => handleDelete(q)} className="text-red-600 hover:text-red-900" title="Eliminar"><i className="fas fa-trash"></i></button>

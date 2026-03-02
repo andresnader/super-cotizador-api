@@ -38,7 +38,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
     const [quickServiceForm, setQuickServiceForm] = useState({ code: '', name: '', price: '', category: 'General' });
 
     const mode = dataManager.getMode();
-    const sourceLabel = mode === 'google' ? 'Drive' : 'Local';
+    const sourceLabel = mode === 'firebase' ? 'Nube' : 'Local';
     const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
 
     // Load Data

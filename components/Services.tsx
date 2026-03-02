@@ -12,7 +12,7 @@ interface ServicesProps {
 interface ServiceFormProps {
     form: Partial<Service>;
     isEditing: boolean;
-    mode: 'google' | 'local' | null;
+    mode: 'firebase' | 'local' | null;
     sourceLabel: string;
     onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     onSubmit: (e: React.FormEvent) => void;
@@ -49,7 +49,7 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const mode = dataManager.getMode();
-    const sourceLabel = mode === 'google' ? 'Drive' : 'Local';
+    const sourceLabel = mode === 'firebase' ? 'Nube' : 'Local';
 
     const loadData = async () => {
         setLoading(true);
@@ -108,11 +108,11 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
         setShowFormModal(true);
     };
 
-    const handleDelete = async (rowId?: any) => {
-        if (!rowId) return;
+    const handleDelete = async (id: string) => {
+        if (!id) return;
         if (confirm(`¿Eliminar servicio? Esta acción es permanente en ${sourceLabel}.`)) {
             try {
-                await dataManager.deleteService(rowId);
+                await dataManager.deleteService(id);
                 await loadData();
             } catch (e) {
                 console.error(e);
@@ -188,7 +188,7 @@ const Services: React.FC<ServicesProps> = ({ isModal }) => {
                                         <td className="px-6 py-4 text-right font-bold text-gray-800">${s.price.toFixed(2)}</td>
                                         <td className="px-6 py-4 text-right">
                                             <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-800 mr-3"><i className="fas fa-edit"></i></button>
-                                            <button onClick={() => handleDelete(s.rowId)} className="text-red-500 hover:text-red-700"><i className="fas fa-trash"></i></button>
+                                            <button onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700"><i className="fas fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 ))

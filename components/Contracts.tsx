@@ -337,6 +337,25 @@ const Contracts: React.FC = () => {
         });
     }, [contracts, searchTerm, filterType, filterStatus]);
 
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'active': return 'Activo';
+            case 'paused': return 'Pausado';
+            case 'cancelled': return 'Cancelado';
+            default: return status;
+        }
+    };
+
+    const getPeriodLabel = (period: string) => {
+        switch (period) {
+            case 'monthly': return 'Mensual';
+            case 'quarterly': return 'Trimestral';
+            case 'semiannual': return 'Semestral';
+            case 'annual': return 'Anual';
+            default: return period;
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'active': return 'bg-green-100 text-green-800';
@@ -432,14 +451,14 @@ const Contracts: React.FC = () => {
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
                                         <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider ${getStatusColor(contract.status)}`}>
-                                            {contract.status}
+                                            {getStatusLabel(contract.status)}
                                         </span>
                                         <h3 className="font-bold text-lg text-gray-800 mt-2">{contract.serviceName}</h3>
                                         <p className="text-sm text-gray-500">{contract.clientName}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-bold text-indigo-600 text-lg">${contract.amount.toFixed(2)}</p>
-                                        <p className="text-xs text-gray-400 capitalize">{contract.period}</p>
+                                        <p className="text-xs text-gray-400 capitalize">{getPeriodLabel(contract.period)}</p>
                                     </div>
                                 </div>
 

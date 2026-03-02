@@ -8,7 +8,7 @@ const defaultSettings: CompanySettings = {
     ruc: '1234567890001',
     repName: 'Andrés Nader',
     repTitle: 'Gerente General',
-    logo: 'https://placehold.co/200x100/eef2ff/4f46e5?text=Tu+Logo',
+    logo: '/cotizador/ameizin-img.png',
     primaryColor: '#1a202c',
     accentColor: '#4f46e5',
     website: '',
@@ -39,19 +39,18 @@ export const saveClient = async (client: Client): Promise<void> => {
     const clients = _getClients();
     if (client.id && clients.some(c => c.id === client.id)) {
         const index = clients.findIndex(c => c.id === client.id);
-        clients[index] = { ...client, rowId: client.id }; // Use ID as rowId for local
+        clients[index] = { ...client };
     } else {
         client.id = client.id || `client_${Date.now()}`;
-        client.rowId = client.id;
         clients.push(client);
     }
     _saveClients(clients);
     return Promise.resolve();
 };
 
-export const deleteClient = async (rowId: any): Promise<void> => {
+export const deleteClient = async (id: string): Promise<void> => {
     const clients = _getClients();
-    const newClients = clients.filter(c => c.id !== rowId); // For local, rowId is the ID
+    const newClients = clients.filter(c => c.id !== id);
     _saveClients(newClients);
     return Promise.resolve();
 };
@@ -64,19 +63,18 @@ export const saveService = async (service: Service): Promise<void> => {
     const services = _getServices();
     if (service.id && services.some(s => s.id === service.id)) {
         const index = services.findIndex(s => s.id === service.id);
-        services[index] = { ...service, rowId: service.id };
+        services[index] = { ...service };
     } else {
         service.id = service.id || `service_${Date.now()}`;
-        service.rowId = service.id;
         services.push(service);
     }
     _saveServices(services);
     return Promise.resolve();
 };
 
-export const deleteService = async (rowId: any): Promise<void> => {
+export const deleteService = async (id: string): Promise<void> => {
     const services = _getServices();
-    const newServices = services.filter(s => s.id !== rowId);
+    const newServices = services.filter(s => s.id !== id);
     _saveServices(newServices);
     return Promise.resolve();
 };
@@ -87,28 +85,26 @@ export const fetchQuotes = async (): Promise<Quote[]> => {
 
 export const saveQuote = async (quote: Quote): Promise<void> => {
     const quotes = _getQuotes();
-    // Local quotes usually are immutable history, but we allow status updates
     const index = quotes.findIndex(q => q.id === quote.id);
     if (index >= 0) {
-        quotes[index] = { ...quote, rowId: quote.id };
+        quotes[index] = { ...quote };
     } else {
-        quote.rowId = quote.id;
         quotes.push(quote);
     }
     _saveQuotes(quotes);
     return Promise.resolve();
 };
 
-export const deleteQuote = async (rowId: any): Promise<void> => {
+export const deleteQuote = async (id: string): Promise<void> => {
     const quotes = _getQuotes();
-    const newQuotes = quotes.filter(q => q.id !== rowId);
+    const newQuotes = quotes.filter(q => q.id !== id);
     _saveQuotes(newQuotes);
     return Promise.resolve();
 };
 
-export const updateQuoteStatus = async (rowId: any, status: string): Promise<void> => {
+export const updateQuoteStatus = async (id: string, status: string): Promise<void> => {
     const quotes = _getQuotes();
-    const index = quotes.findIndex(q => q.id === rowId);
+    const index = quotes.findIndex(q => q.id === id);
     if (index >= 0) {
         quotes[index].status = status as any;
         _saveQuotes(quotes);
@@ -126,19 +122,18 @@ export const saveContract = async (contract: RecurringContract): Promise<void> =
     const contracts = _getRecurringContracts();
     if (contract.id && contracts.some(c => c.id === contract.id)) {
         const index = contracts.findIndex(c => c.id === contract.id);
-        contracts[index] = { ...contract, rowId: contract.id };
+        contracts[index] = { ...contract };
     } else {
         contract.id = contract.id || `contract_${Date.now()}`;
-        contract.rowId = contract.id;
         contracts.push(contract);
     }
     _saveRecurringContracts(contracts);
     return Promise.resolve();
 };
 
-export const deleteContract = async (rowId: any): Promise<void> => {
+export const deleteContract = async (id: string): Promise<void> => {
     const contracts = _getRecurringContracts();
-    const newContracts = contracts.filter(c => c.id !== rowId);
+    const newContracts = contracts.filter(c => c.id !== id);
     _saveRecurringContracts(newContracts);
     return Promise.resolve();
 };

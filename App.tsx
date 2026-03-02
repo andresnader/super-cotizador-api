@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CompanySettings, Quote, AuthMode } from './types';
 import { getCompanySettings } from './services/storage';
-import { initializeGoogleApi, findExistingDatabase, initializeUserDatabase, setGapiToken } from './services/google';
+import { onAuthChange, signOutFirebase } from './services/firebaseAuth';
 import { dataManager } from './services/dataManager';
-import { sessionService } from './services/sessionService';
+import { downloadQuotePDF } from './services/pdfService';
 import Login from './components/Login';
 import Layout from './components/Layout';
 import QuoteBuilder from './components/QuoteBuilder';
@@ -21,31 +21,32 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [isGoogleReady, setIsGoogleReady] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState('cotizador');
   const [companySettings, setCompanySettings] = useState<CompanySettings>(getCompanySettings());
 
   const [previewQuote, setPreviewQuote] = useState<Quote | null>(null);
-  const [quoteToEditId, setQuoteToEditId] = useState<string | null>(null);
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  // Init Google API only if online
+  // Firebase Auth state listener — auto-restores session
   useEffect(() => {
-    const init = async () => {
-      if (!navigator.onLine) {
-        setAuthError("Modo sin conexión detectado. Use el Modo Local.");
-        return;
+    const unsubscribe = onAuthChange((user) => {
+      if (user) {
+        setUserProfile({
+          name: user.displayName || 'Usuario',
+          email: user.email || '',
+          picture: user.photoURL || ''
+        });
+        setAuthMode('firebase');
+        dataManager.setMode('firebase');
+        setIsLoggedIn(true);
       }
-      try {
-        await initializeGoogleApi();
-        setIsGoogleReady(true);
-      } catch (err: any) {
-        console.warn("Google API Init Warning (Non-critical for Local Mode)", err);
-        setAuthError("No se pudo conectar con Google. Puede usar el Modo Local.");
-      }
-    };
-    init();
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -53,7 +54,7 @@ const App: React.FC = () => {
   }, [companySettings]);
 
   const PrintTemplate: React.FC<{ quote: Quote, settings: CompanySettings }> = ({ quote, settings }) => {
-    const logoSrc = settings.logo || "https://placehold.co/200x100/eef2ff/4f46e5?text=Tu+Logo";
+    const logoSrc = settings.logo || "/cotizador/ameizin-img.png";
 
     return (
       <div id="print-section" className="font-sans text-gray-800 print-content text-sm md:text-base">
@@ -103,7 +104,7 @@ const App: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full mb-10 border-collapse min-w-full md:min-w-[600px]">
             <thead>
-              <tr style={{ backgroundColor: settings.primaryColor, color: 'white', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+              <tr style={{ backgroundColor: settings.primaryColor, color: 'white', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as any}>
                 <th className="py-3 px-4 text-left font-semibold rounded-tl-lg text-xs md:text-sm uppercase tracking-wide">Descripción</th>
                 <th className="py-3 px-4 text-center font-semibold text-xs md:text-sm uppercase tracking-wide w-16 md:w-24">Cant.</th>
                 <th className="py-3 px-4 text-right font-semibold text-xs md:text-sm uppercase tracking-wide w-24 md:w-32">Precio Unit.</th>
@@ -170,82 +171,55 @@ const App: React.FC = () => {
     );
   };
 
-  const handleLogin = async (user: any, mode: AuthMode, token?: string, expiresIn?: number) => {
+  const handleLogin = async (user: any, mode: AuthMode) => {
     setUserProfile(user);
     setAuthMode(mode);
     dataManager.setMode(mode);
-
-    if (mode === 'google' && token && expiresIn) {
-      sessionService.saveSession(token, expiresIn, user.email, user.picture, user.name);
-
-      // Check/Init Database
-      try {
-        let sheetId = sessionService.getSpreadsheetId();
-        if (!sheetId) {
-          console.log("Searching for existing database...");
-          sheetId = await findExistingDatabase();
-          if (!sheetId) {
-            console.log("Creating new database...");
-            sheetId = await initializeUserDatabase();
-          }
-          if (sheetId) {
-            sessionService.saveSpreadsheetId(sheetId);
-            console.log("Database linked:", sheetId);
-          }
-        }
-      } catch (e) {
-        console.error("Database initialization failed", e);
-        setAuthError("Error conectando con la base de datos de Google Drive.");
-      }
-    }
-
     setIsLoggedIn(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (authMode === 'firebase') {
+      try {
+        await signOutFirebase();
+      } catch (e) {
+        console.error("Logout error:", e);
+      }
+    }
     setIsLoggedIn(false);
     setUserProfile(null);
     setAuthMode(null);
-    sessionService.clearSession();
     setActiveTab('cotizador');
+    setEditingQuoteId(null);
   };
 
-  useEffect(() => {
-    const restoreSession = async () => {
-      const session = sessionService.getSession();
-      if (session && sessionService.isTokenValid()) {
-        // CRITICAL: Set the access token in gapi.client so API calls work
-        setGapiToken(session.accessToken);
+  const handleDownloadPDF = async () => {
+    if (!previewQuote) return;
+    setIsDownloading(true);
+    try {
+      await downloadQuotePDF(previewQuote.number);
+    } catch (e) {
+      console.error("Error generating PDF:", e);
+      alert("Error al generar el PDF. Intente imprimir directamente.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
-        setUserProfile({
-          email: session.userEmail,
-          name: session.userName,
-          picture: session.userPicture
-        });
-        setAuthMode('google');
-        dataManager.setMode('google');
-        setIsLoggedIn(true);
-
-        // Verify DB connection on restore
-        if (!session.spreadsheetId) {
-          try {
-            const sheetId = await findExistingDatabase();
-            if (sheetId) {
-              sessionService.saveSpreadsheetId(sheetId);
-            } else {
-              console.warn("Session restored but no DB found. User might need to re-login or init DB.");
-            }
-          } catch (e) {
-            console.error("Error checking DB on restore", e);
-          }
-        }
-      }
-    };
-    restoreSession();
-  }, []);
+  // Show loading while Firebase checks auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+        <div className="text-center">
+          <span className="inline-block w-10 h-10 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></span>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} isGoogleReady={isGoogleReady} error={authError} />;
+    return <Login onLogin={handleLogin} />;
   }
 
   return (
@@ -263,8 +237,10 @@ const App: React.FC = () => {
           <QuoteBuilder
             settings={companySettings}
             onPrint={setPreviewQuote}
-            editQuoteId={quoteToEditId}
-            onQuoteSaved={() => setQuoteToEditId(null)}
+            editQuoteId={editingQuoteId}
+            onQuoteSaved={() => {
+              setEditingQuoteId(null);
+            }}
           />
         )}
         {activeTab === 'estadisticas' && <Statistics settings={companySettings} />}
@@ -273,7 +249,7 @@ const App: React.FC = () => {
         {activeTab === 'historial' && (
           <History
             onEdit={(id) => {
-              setQuoteToEditId(id);
+              setEditingQuoteId(id);
               setActiveTab('cotizador');
             }}
             onPrint={setPreviewQuote}
@@ -310,10 +286,18 @@ const App: React.FC = () => {
                 Cerrar
               </button>
               <button
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center font-medium shadow-md disabled:opacity-50"
+              >
+                <i className={`fas ${isDownloading ? 'fa-spinner fa-spin' : 'fa-download'} mr-2`}></i>
+                {isDownloading ? 'Generando...' : 'Descargar PDF'}
+              </button>
+              <button
                 onClick={() => window.print()}
                 className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-md"
               >
-                <i className="fas fa-print mr-2"></i> Imprimir PDF
+                <i className="fas fa-print mr-2"></i> Imprimir
               </button>
             </div>
           </div>
