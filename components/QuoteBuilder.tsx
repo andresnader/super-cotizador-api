@@ -210,8 +210,16 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
       const newQuote: Quote = {
         id: editQuoteId || `quote_${now.getTime()}`, // Use existing ID if editing
         number: editQuoteId ? (await dataManager.fetchQuotes()).find(q => q.id === editQuoteId)?.number || number : number, // Keep number if editing
-        issueDate: now.toLocaleDateString('es-EC'),
-        validityDate: new Date(quoteDate).toLocaleDateString('es-EC'),
+        issueDate: (() => {
+          const [y, m, d] = quoteDate.split('-');
+          return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).toLocaleDateString('es-EC');
+        })(),
+        validityDate: (() => {
+          const [y, m, d] = quoteDate.split('-');
+          const vDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+          vDate.setDate(vDate.getDate() + 30);
+          return vDate.toLocaleDateString('es-EC');
+        })(),
         client: clientObj,
         items: quoteItems,
         subtotal,
@@ -249,173 +257,313 @@ const QuoteBuilder: React.FC<QuoteBuilderProps> = ({ settings, onPrint, editQuot
   const onServiceBlur = () => setTimeout(() => setShowServiceDropdown(false), 200);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-        <h2 className="text-2xl font-bold mb-4 border-b pb-2 text-gray-800">Crear Cotización</h2>
+    <div className="relative flex flex-col lg:flex-row w-full gap-6 p-2 md:p-6 bg-gradient-to-br from-indigo-50/30 via-white/30 to-emerald-50/30 dark:from-gray-900/50 dark:via-gray-800/50 dark:to-gray-900/50 rounded-3xl pb-24 lg:pb-6">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-            <div className="flex space-x-2 relative">
-              <div className="w-full relative">
-                <input
-                  type="text"
-                  className={`w-full p-2 border rounded-lg shadow-sm bg-white text-gray-900 ${validationError && !selectedClient ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-                  placeholder="Buscar cliente..."
-                  value={clientSearch}
-                  onChange={handleClientSearch}
-                  onFocus={() => setShowClientDropdown(true)}
-                  onBlur={onClientBlur}
-                />
-                {showClientDropdown && (
-                  <div className="absolute z-50 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredClients.map(c => (
-                      <div key={c.id} className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100" onClick={() => selectClient(c)}>
-                        <div className="font-medium">{c.name}</div>
-                        <div className="text-xs text-gray-500">{c.ruc}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button onClick={() => setShowClientModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors"><i className="fas fa-user-plus"></i></button>
-            </div>
+      {/* LEFT COLUMN: Form Areas */}
+      <div className="flex-1 flex flex-col gap-6 w-full max-w-full pb-64 lg:pb-0">
+
+        {/* Client Section */}
+        <section className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-3xl p-5 md:p-6 shadow-xl shadow-slate-200/20 dark:shadow-black/20">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <i className="fas fa-user-circle text-indigo-500"></i>
+              Información del Cliente
+            </h2>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">RUC / C.I.</label>
-            <input type="text" readOnly className="w-full p-2 bg-gray-100 text-gray-900 border rounded-lg" value={currentClient?.ruc || ''} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Validez</label>
-            <input type="date" className="w-full p-2 border rounded-lg bg-white text-gray-900" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase px-1 mb-1">Cliente</label>
               <div className="flex space-x-2 relative">
                 <div className="w-full relative">
+                  <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded-lg shadow-sm bg-white text-gray-900"
-                    placeholder="Buscar servicio..."
-                    value={serviceSearch}
-                    onChange={handleServiceSearch}
-                    onFocus={() => setShowServiceDropdown(true)}
-                    onBlur={onServiceBlur}
+                    className={`w-full bg-white/50 dark:bg-black/20 border ${validationError && !selectedClient ? 'border-red-400' : 'border-white/40 dark:border-gray-600'} backdrop-blur-md rounded-2xl py-3 pl-10 pr-4 focus:ring-2 focus:ring-indigo-500/50 text-gray-900 dark:text-gray-100 transition-all`}
+                    placeholder="Buscar cliente..."
+                    value={clientSearch}
+                    onChange={handleClientSearch}
+                    onFocus={() => setShowClientDropdown(true)}
+                    onBlur={onClientBlur}
                   />
-                  {showServiceDropdown && (
-                    <div className="absolute z-50 w-full bg-white border mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredServices.map(s => (
-                        <div key={s.id} className="p-2 hover:bg-gray-100 cursor-pointer border-b" onClick={() => selectService(s)}>
-                          <div className="font-medium">{s.name}</div>
-                          <div className="text-xs flex justify-between"><span>{s.code}</span><span className="font-bold">${s.price}</span></div>
+                  {showClientDropdown && (
+                    <div className="absolute z-50 w-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 mt-2 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
+                      {filteredClients.map(c => (
+                        <div key={c.id} className="p-3 hover:bg-indigo-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors" onClick={() => selectClient(c)}>
+                          <div className="font-semibold text-gray-800 dark:text-gray-200">{c.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{c.ruc}</div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                <button onClick={() => setShowServiceModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors"><i className="fas fa-plus"></i></button>
+                <button
+                  onClick={() => setShowClientModal(true)}
+                  className="bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-600 dark:text-indigo-400 px-4 py-3 rounded-2xl transition-all shadow-sm flex items-center justify-center min-w-[56px]"
+                >
+                  <i className="fas fa-plus"></i>
+                </button>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
-              <input type="number" step="0.01" className="w-full p-2 border rounded-lg text-right bg-white text-gray-900" value={previewService.price || ''} onChange={(e) => setPreviewService({ ...previewService, price: parseFloat(e.target.value) })} />
+
+            <div className="space-y-1">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase px-1">RUC / C.I.</label>
+              <input
+                type="text"
+                readOnly
+                className="w-full bg-white/30 dark:bg-black/30 border border-white/20 dark:border-gray-700 rounded-xl py-3 px-4 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                value={currentClient?.ruc || ''}
+                placeholder="---"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase px-1">Validez</label>
+              <input
+                type="date"
+                className="w-full bg-white/50 dark:bg-black/20 border border-white/40 dark:border-gray-600 backdrop-blur-md rounded-xl py-3 px-4 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                value={quoteDate}
+                onChange={(e) => setQuoteDate(e.target.value)}
+              />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Detalle Adicional</label>
-            <textarea className="w-full p-2 border rounded-lg text-sm bg-white text-gray-900" rows={2} value={customDetail} onChange={(e) => setCustomDetail(e.target.value)} />
-          </div>
-          <button onClick={addService} className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">AÑADIR</button>
-        </div>
+        </section>
 
-        <div className="overflow-x-auto mb-6">
-          <table className={`min-w-full divide-y divide-gray-200 border rounded-lg ${validationError && quoteItems.length === 0 ? 'border-red-300' : ''}`}>
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase">Servicio</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase">Cant</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase">Precio</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase">Total</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+        {/* Add Service Section */}
+        <section className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl border border-indigo-200/50 dark:border-indigo-500/30 rounded-3xl p-5 md:p-6 shadow-xl shadow-indigo-100/20 dark:shadow-black/20 relative overflow-hidden">
+          {/* Subtle decorative gradient */}
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2.5 rounded-xl text-indigo-600 dark:text-indigo-400">
+              <i className="fas fa-box-open text-lg"></i>
+            </div>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Añadir Servicio</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="w-full relative flex-1">
+                <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input
+                  type="text"
+                  className="w-full bg-white/70 dark:bg-black/30 border border-white/50 dark:border-gray-600 backdrop-blur-md rounded-2xl py-3.5 pl-10 pr-4 focus:ring-2 focus:ring-indigo-500/50 text-gray-900 dark:text-gray-100 transition-all"
+                  placeholder="Buscar servicio..."
+                  value={serviceSearch}
+                  onChange={handleServiceSearch}
+                  onFocus={() => setShowServiceDropdown(true)}
+                  onBlur={onServiceBlur}
+                />
+                {showServiceDropdown && (
+                  <div className="absolute z-50 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 mt-2 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
+                    {filteredServices.map(s => (
+                      <div key={s.id} className="p-3 hover:bg-indigo-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors" onClick={() => selectService(s)}>
+                        <div className="font-semibold text-gray-800 dark:text-gray-200">{s.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 flex justify-between mt-1">
+                          <span>{s.code}</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">${s.price}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowServiceModal(true)}
+                  className="bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-600 dark:text-indigo-400 px-4 py-3.5 rounded-2xl transition-all shadow-sm flex items-center justify-center min-w-[56px]"
+                  title="Nuevo Servicio Maestro"
+                >
+                  <i className="fas fa-plus"></i>
+                </button>
+                <div className="relative w-32">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full bg-white/70 dark:bg-black/30 border border-white/50 dark:border-gray-600 backdrop-blur-md rounded-2xl py-3.5 pl-8 pr-3 focus:ring-2 focus:ring-indigo-500/50 text-gray-900 dark:text-gray-100 transition-all font-semibold"
+                    placeholder="Precio"
+                    value={previewService.price || ''}
+                    onChange={(e) => setPreviewService({ ...previewService, price: parseFloat(e.target.value) })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <textarea
+                className="w-full bg-white/50 dark:bg-black/20 border border-white/40 dark:border-gray-600 backdrop-blur-md rounded-2xl py-3 px-4 focus:ring-2 focus:ring-indigo-500/50 text-gray-900 dark:text-gray-100 transition-all text-sm resize-y"
+                rows={2}
+                placeholder="Detalle adicional opcional..."
+                value={customDetail}
+                onChange={(e) => setCustomDetail(e.target.value)}
+              />
+            </div>
+
+            <button
+              onClick={addService}
+              className="w-full py-4 bg-gradient-to-r from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+            >
+              <i className="fas fa-check-circle"></i>
+              AÑADIR AL RESUMEN
+            </button>
+          </div>
+        </section>
+
+        {/* Added Items (Mobile Cards + Grid) */}
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 px-2">Servicios Agregados</h2>
+
+          {quoteItems.length === 0 ? (
+            <div className="bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm border border-dashed border-gray-300 dark:border-gray-700 rounded-3xl p-8 text-center text-gray-500 py-12">
+              <i className="fas fa-receipt text-4xl mb-3 text-gray-300 dark:text-gray-600"></i>
+              <p>No hay servicios agregados aún.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
               {quoteItems.map((item, idx) => (
-                <tr key={idx}>
-                  <td className="px-4 py-3">
-                    <input
-                      type="text"
-                      className="w-full font-medium border-none bg-transparent focus:ring-1 focus:ring-indigo-500 rounded px-1 mb-1 text-gray-900"
-                      value={item.name}
-                      onChange={(e) => updateItem(idx, 'name', e.target.value)}
-                    />
-                    <textarea
-                      className="w-full text-xs text-gray-500 border-none bg-transparent focus:ring-1 focus:ring-indigo-500 rounded px-1 resize-y"
-                      value={item.description}
-                      onChange={(e) => updateItem(idx, 'description', e.target.value)}
-                      rows={2}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-center align-top pt-4">
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-16 text-center border rounded p-1 bg-white text-gray-900"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 1)}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-right align-top pt-4">
-                    <div className="flex items-center justify-end">
-                      <span className="text-gray-500 mr-1">$</span>
+                <div key={idx} className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-3xl p-5 shadow-sm transition-all hover:shadow-md">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1 mr-4">
                       <input
-                        type="number"
-                        step="0.01"
-                        className="w-24 text-right border rounded p-1 bg-white text-gray-900"
-                        value={item.price}
-                        onChange={(e) => updateItem(idx, 'price', parseFloat(e.target.value) || 0)}
+                        type="text"
+                        className="w-full font-bold text-base md:text-lg border-none bg-transparent focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -ml-1 text-gray-800 dark:text-gray-100 placeholder-gray-400"
+                        value={item.name}
+                        onChange={(e) => updateItem(idx, 'name', e.target.value)}
+                        placeholder="Nombre del servicio"
+                      />
+                      <textarea
+                        className="w-full text-sm text-gray-500 dark:text-gray-400 border-none bg-transparent focus:ring-2 focus:ring-indigo-500/30 rounded px-1 -ml-1 mt-1 resize-y min-h-[40px]"
+                        value={item.description}
+                        onChange={(e) => updateItem(idx, 'description', e.target.value)}
+                        placeholder="Descripción detallada..."
+                        rows={2}
                       />
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium align-top pt-5">${(item.price * item.quantity).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right align-top pt-5">
-                    <button onClick={() => removeService(idx)} className="text-red-500 hover:text-red-700">
+                    <button
+                      onClick={() => removeService(idx)}
+                      className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-2 rounded-full transition-colors flex-shrink-0"
+                    >
                       <i className="fas fa-trash"></i>
                     </button>
-                  </td>
-                </tr>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase text-gray-400 px-1">Cantidad</label>
+                      <div className="flex items-center bg-white/50 dark:bg-black/20 rounded-xl p-1 border border-white/30 dark:border-gray-700">
+                        <button
+                          onClick={() => updateItem(idx, 'quantity', Math.max(1, item.quantity - 1))}
+                          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
+                        >
+                          <i className="fas fa-minus text-xs"></i>
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          className="w-full text-center bg-transparent border-none focus:ring-0 font-semibold text-gray-800 dark:text-gray-200"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 1)}
+                        />
+                        <button
+                          onClick={() => updateItem(idx, 'quantity', item.quantity + 1)}
+                          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
+                        >
+                          <i className="fas fa-plus text-xs"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase text-gray-400 px-1">Precio Unitario</label>
+                      <div className="flex items-center bg-white/50 dark:bg-black/20 rounded-xl px-3 border border-white/30 dark:border-gray-700 h-[48px]">
+                        <span className="text-sm font-semibold text-gray-400">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="w-full bg-transparent border-none focus:ring-0 font-semibold text-right text-gray-800 dark:text-gray-200"
+                          value={item.price}
+                          onChange={(e) => updateItem(idx, 'price', parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/50 flex justify-between items-center px-1">
+                    <span className="text-xs font-medium text-gray-500 uppercase">Subtotal Item</span>
+                    <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          )}
+        </section>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales</label>
-          <textarea className="w-full p-2 border rounded-lg h-24 bg-white text-gray-900" value={quoteNotes} onChange={(e) => setQuoteNotes(e.target.value)} />
+        {/* Notes Section */}
+        <section className="mt-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 px-2">Notas / Términos</h2>
+          <textarea
+            className="w-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-3xl p-5 min-h-[120px] focus:ring-2 focus:ring-indigo-500/50 text-sm resize-y text-gray-800 dark:text-gray-200 shadow-inner"
+            placeholder="Escribe términos de pago, tiempo de entrega, o notas especiales para el cliente..."
+            value={quoteNotes}
+            onChange={(e) => setQuoteNotes(e.target.value)}
+          />
+        </section>
+
+      </div>
+
+      {/* RIGHT COLUMN / BOTTOM STICKY: Summary Sidebar */}
+      <div className="w-full lg:w-96 flex-shrink-0 z-40 fixed lg:sticky bottom-24 left-0 right-0 lg:top-4 lg:bottom-auto p-4 lg:p-0 pointer-events-none lg:pointer-events-auto">
+        <div className="bg-white/85 dark:bg-gray-900/95 backdrop-blur-2xl border border-white/60 dark:border-gray-700 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] lg:shadow-2xl rounded-3xl p-5 lg:p-8 pointer-events-auto transform transition-transform">
+
+          <h2 className="hidden lg:block text-xl font-bold mb-6 text-gray-800 dark:text-gray-100">Resumen Cotización</h2>
+
+          <div className="space-y-3 mb-6">
+            <div className="flex justify-between items-center text-sm md:text-base">
+              <span className="text-gray-500 font-medium">Subtotal</span>
+              <span className="font-semibold text-gray-800 dark:text-gray-200">${subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm md:text-base">
+              <span className="text-gray-500 font-medium">IVA (15%)</span>
+              <span className="font-semibold text-gray-800 dark:text-gray-200">${iva.toFixed(2)}</span>
+            </div>
+            <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <span className="text-lg font-bold text-gray-800 dark:text-gray-100">Total Final</span>
+              <span
+                className="text-2xl md:text-3xl font-black"
+                style={{ color: settings.accentColor || '#4f46e5' }}
+              >
+                ${total.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {validationError && (
+            <div className="mb-5 p-4 bg-rose-50/80 dark:bg-rose-900/30 backdrop-blur border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-2xl text-sm font-medium flex items-start gap-2">
+              <i className="fas fa-exclamation-circle mt-0.5"></i>
+              <span>{validationError}</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => handleGenerate()}
+            disabled={isSubmitting}
+            className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed group text-lg"
+          >
+            {isSubmitting ? (
+              <i className="fas fa-circle-notch fa-spin text-xl"></i>
+            ) : (
+              <>
+                <span>{editQuoteId ? 'Actualizar Cotización' : 'Generar PDF'}</span>
+                <i className="fas fa-paper-plane text-xl group-hover:translate-x-1 transition-transform"></i>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-fit sticky top-4">
-        <h2 className="text-2xl font-bold mb-4 border-b pb-2 text-gray-800">Resumen</h2>
-        <div className="space-y-4 mb-8">
-          <div className="flex justify-between"><span>Subtotal:</span><span className="font-semibold">${subtotal.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>IVA (15%):</span><span className="font-semibold">${iva.toFixed(2)}</span></div>
-          <hr />
-          <div className="flex justify-between text-2xl font-bold" style={{ color: settings.accentColor }}><span>TOTAL:</span><span>${total.toFixed(2)}</span></div>
-        </div>
-
-        {validationError && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{validationError}</div>}
-
-        <button onClick={() => handleGenerate()} disabled={isSubmitting} className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 mb-3 font-bold shadow-md transition-colors disabled:opacity-50">
-          <i className="fas fa-print mr-2"></i> Crear Cotización
-        </button>
-      </div>
-
+      {/* Modals outside styling context */}
       <Modal isOpen={showClientModal} onClose={() => { setShowClientModal(false); refreshData(); }}>
         <Clients isModal={true} />
       </Modal>

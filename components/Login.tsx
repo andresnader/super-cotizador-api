@@ -23,6 +23,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setLocalError("Se cerró la ventana de inicio de sesión.");
       } else if (err.code === 'auth/network-request-failed') {
         setLocalError("Error de red. Verifica tu conexión a internet.");
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setLocalError("Dominio no autorizado. Debes agregar esta IP (ej. 192.168.1.24) en Firebase Console > Authentication > Settings > Authorized domains.");
       } else {
         setLocalError("Error al iniciar sesión con Google. " + (err.message || ""));
       }

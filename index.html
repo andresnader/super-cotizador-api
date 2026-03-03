@@ -61,8 +61,30 @@
             }
 
             @page {
-                size: auto;
-                margin: 10mm;
+                size: A4;
+                margin: 0;
+                /* Remove default browser margins */
+            }
+
+            /* Safari/iOS fix for repeating headers/footers in print and bad paginations */
+            tr,
+            td,
+            th {
+                page-break-inside: avoid !important;
+            }
+
+            .page-break-before {
+                page-break-before: always !important;
+            }
+
+            .avoid-page-break {
+                page-break-inside: avoid !important;
+            }
+
+            /* Remove margins from the print section itself so it relies on the internal padding */
+            #print-section {
+                margin: 0 !important;
+                padding: 0 !important;
             }
         }
     </style>

@@ -8,28 +8,27 @@ interface SettingsSidebarProps {
 const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ activeSection, onSectionChange }) => {
     const sections = [
         { id: 'company', label: 'Perfil de empresa', icon: 'fa-building' },
-        { id: 'brand', label: 'Kit de Marca', icon: 'fa-palette' },
-        { id: 'customize', label: 'Personalizar', icon: 'fa-paint-brush' },
+        { id: 'customize', label: 'Apariencia y Marca', icon: 'fa-paint-brush' },
         { id: 'data', label: 'Administrador de datos', icon: 'fa-database' }
     ];
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-2">
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 shadow-lg rounded-[2rem] p-3">
             {sections.map((section) => (
                 <button
                     key={section.id}
                     onClick={() => onSectionChange(section.id)}
                     className={`
-                        w-full text-left px-4 py-3 rounded-lg mb-1 transition-all duration-200
-                        flex items-center space-x-3
+                        w-full text-left px-5 py-4 rounded-2xl mb-2 transition-all duration-300
+                        flex items-center space-x-4
                         ${activeSection === section.id
-                            ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            ? 'bg-white/80 text-indigo-800 font-bold shadow-sm border border-white/50 ring-1 ring-indigo-500/20'
+                            : 'text-slate-600 hover:bg-white/50 hover:text-indigo-700'
                         }
                     `}
                 >
-                    <i className={`fas ${section.icon} w-5 text-center`}></i>
-                    <span>{section.label}</span>
+                    <i className={`fas ${section.icon} w-6 text-center text-lg`}></i>
+                    <span className="text-base">{section.label}</span>
                 </button>
             ))}
         </div>

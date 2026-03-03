@@ -13,41 +13,82 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, settings, authMode, onLogout, userProfile }) => {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isOperacionesOpen, setIsOperacionesOpen] = useState(false);
+    const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
 
     const isOperacionesActive = ['clientes', 'servicios', 'historial', 'operaciones'].includes(activeTab);
 
-    return (
-        <div className="min-h-screen flex flex-col">
-            {/* Top Bar / Header */}
-            <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 no-print">
-                <div className="container mx-auto px-4">
-                    <div className="flex flex-col md:flex-row justify-between items-center py-2 md:py-0 h-auto md:h-16">
-                        {/* Left: Logo & Main Nav */}
-                        <div className="flex items-center w-full md:w-auto justify-between md:justify-start">
-                            {/* Mobile Hamburger */}
-                            <button
-                                className="md:hidden text-gray-600 hover:text-indigo-600 focus:outline-none mr-4"
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            >
-                                <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'} text-2xl`}></i>
-                            </button>
+    // Primary mobile tabs shown in the floating bottom bar
+    const mobileNavItems = [
+        { key: 'dashboard', icon: 'fa-desktop', label: 'Panel' },
+        { key: 'cotizador', icon: 'fa-file-invoice-dollar', label: 'Cotizar' },
+        { key: 'historial', icon: 'fa-history', label: 'Historial' },
+        { key: 'clientes', icon: 'fa-users', label: 'Clientes' },
+    ];
 
+    // Secondary mobile tabs shown when "Más" is tapped
+    const mobileMoreItems = [
+        { key: 'estadisticas', icon: 'fa-chart-pie', label: 'Estadísticas' },
+        { key: 'servicios', icon: 'fa-concierge-bell', label: 'Servicios' },
+        { key: 'operaciones', icon: 'fa-file-contract', label: 'Contratos' },
+        { key: 'configuracion', icon: 'fa-cog', label: 'Configuración' },
+        { key: 'perfil', icon: 'fa-user', label: 'Perfil' },
+    ];
+
+    const handleMobileNav = (key: string) => {
+        onTabChange(key);
+        setIsMobileMoreOpen(false);
+    };
+
+    // Check if the active tab is one of the "more" items
+    const isMoreActive = mobileMoreItems.some(item => item.key === activeTab);
+
+    return (
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50/30 via-white to-purple-50/30">
+
+            {/* ============ MOBILE TOP HEADER ============ */}
+            <div className="md:hidden sticky top-0 z-30 no-print">
+                <div className="flex items-center justify-between px-4 py-3"
+                    style={{
+                        background: 'rgba(255,255,255,0.6)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
+                        borderBottom: '1px solid rgba(255,255,255,0.5)',
+                    }}
+                >
+                    {/* Logo */}
+                    <div className="flex items-center gap-2">
+                        {settings.logo && (
+                            <img src={settings.logo} alt="Logo" className="h-8 w-auto object-contain" />
+                        )}
+                        <h1 className="text-base font-extrabold text-gray-900 tracking-tight truncate max-w-[180px]">
+                            {settings.name || 'Super Cotizador'}
+                        </h1>
+                    </div>
+
+                    {/* Right actions */}
+                    <div className="flex items-center gap-2">
+                        <ConnectionStatus authMode={authMode || 'local'} userProfile={userProfile} onProfileClick={() => onTabChange('perfil')} />
+                    </div>
+                </div>
+            </div>
+
+            {/* ============ DESKTOP TOP BAR ============ */}
+            <div className="hidden md:block bg-white/70 backdrop-blur-xl shadow-sm border-b border-white/40 sticky top-0 z-30 no-print">
+                <div className="container mx-auto px-4">
+                    <div className="flex justify-between items-center h-16">
+                        {/* Left: Logo & Main Nav */}
+                        <div className="flex items-center">
                             {/* Logo */}
                             <div className="flex items-center mr-8">
                                 {settings.logo && (
-                                    <img
-                                        src={settings.logo}
-                                        alt="Logo"
-                                        className="max-h-8 w-auto mr-2 object-contain"
-                                    />
+                                    <img src={settings.logo} alt="Logo" className="max-h-8 w-auto mr-2 object-contain" />
                                 )}
                                 <h1 className="text-lg font-bold text-gray-900 leading-tight hidden lg:block">{settings.name}</h1>
                             </div>
 
                             {/* Main Nav (Desktop) */}
-                            <nav className="hidden md:flex space-x-1">
+                            <nav className="flex space-x-1">
                                 <button
                                     onClick={() => onTabChange('dashboard')}
                                     className={`px-3 py-5 text-sm font-medium transition-all duration-200 border-b-2 flex items-center ${activeTab === 'dashboard' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-indigo-600 hover:bg-gray-50'}`}
@@ -87,7 +128,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
 
                                     {/* Dropdown Menu */}
                                     {isOperacionesOpen && (
-                                        <div className="absolute top-full left-0 w-56 bg-white rounded-b-md shadow-lg border border-gray-100 py-2 z-50">
+                                        <div className="absolute top-full left-0 w-56 bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 py-2 z-50 mt-1 overflow-hidden">
                                             <button
                                                 onClick={() => { onTabChange('clientes'); setIsOperacionesOpen(false); }}
                                                 className={`w-full text-left px-4 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-600 ${activeTab === 'clientes' ? 'text-indigo-600 font-medium bg-indigo-50' : 'text-gray-700'}`}
@@ -119,7 +160,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
                         </div>
 
                         {/* Right: Secondary Nav (Desktop) */}
-                        <div className="hidden md:flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
                             <button
                                 onClick={() => onTabChange('configuracion')}
                                 className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-gray-100 ${activeTab === 'configuracion' ? 'text-indigo-600 bg-indigo-50' : ''}`}
@@ -142,63 +183,109 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
                             )}
                         </div>
                     </div>
-
-                    {/* Mobile Menu */}
-                    <nav className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:hidden pb-4 border-t border-gray-100`}>
-                        <div className="grid grid-cols-2 gap-2 pt-2">
-                            <button onClick={() => { onTabChange('dashboard'); setIsMobileMenuOpen(false); }} className={`p-3 text-sm font-medium rounded-lg text-left flex items-center ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <i className="fas fa-desktop w-6 text-center mr-2"></i> Escritorio
-                            </button>
-                            <button onClick={() => { onTabChange('cotizador'); setIsMobileMenuOpen(false); }} className={`p-3 text-sm font-medium rounded-lg text-left flex items-center ${activeTab === 'cotizador' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <i className="fas fa-file-invoice-dollar w-6 text-center mr-2"></i> Cotizador
-                            </button>
-                            <button onClick={() => { onTabChange('estadisticas'); setIsMobileMenuOpen(false); }} className={`p-3 text-sm font-medium rounded-lg text-left flex items-center ${activeTab === 'estadisticas' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <i className="fas fa-chart-pie w-6 text-center mr-2"></i> Estadísticas
-                            </button>
-
-                            <div className="col-span-2 bg-gray-50 rounded-lg p-2 mt-2">
-                                <p className="text-xs font-bold text-gray-500 uppercase mb-2 px-2">Operaciones</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button onClick={() => { onTabChange('clientes'); setIsMobileMenuOpen(false); }} className={`p-2 text-sm font-medium rounded text-left flex items-center ${activeTab === 'clientes' ? 'text-indigo-600 bg-white shadow-sm' : 'text-gray-600'}`}>
-                                        <i className="fas fa-users w-6 text-center mr-2"></i> Clientes
-                                    </button>
-                                    <button onClick={() => { onTabChange('servicios'); setIsMobileMenuOpen(false); }} className={`p-2 text-sm font-medium rounded text-left flex items-center ${activeTab === 'servicios' ? 'text-indigo-600 bg-white shadow-sm' : 'text-gray-600'}`}>
-                                        <i className="fas fa-concierge-bell w-6 text-center mr-2"></i> Servicios
-                                    </button>
-                                    <button onClick={() => { onTabChange('historial'); setIsMobileMenuOpen(false); }} className={`p-2 text-sm font-medium rounded text-left flex items-center ${activeTab === 'historial' ? 'text-indigo-600 bg-white shadow-sm' : 'text-gray-600'}`}>
-                                        <i className="fas fa-history w-6 text-center mr-2"></i> Historial
-                                    </button>
-                                    <button onClick={() => { onTabChange('operaciones'); setIsMobileMenuOpen(false); }} className={`p-2 text-sm font-medium rounded text-left flex items-center ${activeTab === 'operaciones' ? 'text-indigo-600 bg-white shadow-sm' : 'text-gray-600'}`}>
-                                        <i className="fas fa-file-contract w-6 text-center mr-2"></i> Contratos
-                                    </button>
-                                </div>
-                            </div>
-
-                            <button onClick={() => { onTabChange('perfil'); setIsMobileMenuOpen(false); }} className={`p-3 text-sm font-medium rounded-lg text-left flex items-center ${activeTab === 'perfil' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <i className="fas fa-user w-6 text-center mr-2"></i> Perfil
-                            </button>
-                            <button onClick={() => { onTabChange('configuracion'); setIsMobileMenuOpen(false); }} className={`p-3 text-sm font-medium rounded-lg text-left flex items-center ${activeTab === 'configuracion' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <i className="fas fa-cog w-6 text-center mr-2"></i> Configuración
-                            </button>
-
-                            {onLogout && (
-                                <button
-                                    onClick={onLogout}
-                                    className="p-3 text-sm font-medium rounded-lg text-left flex items-center text-red-600 hover:bg-red-50 col-span-2"
-                                >
-                                    <i className="fas fa-sign-out-alt w-6 text-center mr-2"></i>
-                                    Salir
-                                </button>
-                            )}
-                        </div>
-                    </nav>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <main className="flex-grow container mx-auto p-4 md:p-8">
+            {/* Main Content — extra bottom padding on mobile for the floating nav */}
+            <main className="flex-grow container mx-auto p-4 md:p-8 pb-36 md:pb-8">
                 {children}
             </main>
+
+            {/* ============ MOBILE FLOATING BOTTOM NAV ============ */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 no-print pointer-events-none">
+                {/* "More" Popup (appears above the nav bar) */}
+                {isMobileMoreOpen && (
+                    <>
+                        {/* Overlay to close */}
+                        <div
+                            className="fixed inset-0 z-40 pointer-events-auto"
+                            onClick={() => setIsMobileMoreOpen(false)}
+                        />
+                        <div
+                            className="relative z-50 mx-4 mb-2 pointer-events-auto rounded-[1.5rem] p-3 shadow-2xl"
+                            style={{
+                                background: 'rgba(255,255,255,0.75)',
+                                backdropFilter: 'blur(30px)',
+                                WebkitBackdropFilter: 'blur(30px)',
+                                border: '1px solid rgba(255,255,255,0.7)',
+                            }}
+                        >
+                            <div className="grid grid-cols-3 gap-1">
+                                {mobileMoreItems.map(item => (
+                                    <button
+                                        key={item.key}
+                                        onClick={() => handleMobileNav(item.key)}
+                                        className={`flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl transition-all duration-200 active:scale-90 ${activeTab === item.key
+                                            ? 'bg-indigo-500/10 text-indigo-600'
+                                            : 'text-gray-500 hover:bg-white/50'
+                                            }`}
+                                    >
+                                        <i className={`fas ${item.icon} text-lg`}></i>
+                                        <span className="text-[10px] font-bold uppercase tracking-tight leading-none">{item.label}</span>
+                                    </button>
+                                ))}
+                                {/* Logout button inside more panel */}
+                                {onLogout && (
+                                    <button
+                                        onClick={onLogout}
+                                        className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl text-red-500 hover:bg-red-50/50 transition-all duration-200 active:scale-90"
+                                    >
+                                        <i className="fas fa-sign-out-alt text-lg"></i>
+                                        <span className="text-[10px] font-bold uppercase tracking-tight leading-none">Salir</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* Floating pill navigation bar */}
+                <div className="px-4 pb-5 pt-1 pointer-events-auto">
+                    <div
+                        className="flex items-center justify-around rounded-full px-2 py-2 shadow-2xl"
+                        style={{
+                            background: 'rgba(255,255,255,0.65)',
+                            backdropFilter: 'blur(28px)',
+                            WebkitBackdropFilter: 'blur(28px)',
+                            border: '1px solid rgba(255,255,255,0.7)',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+                        }}
+                    >
+                        {mobileNavItems.map(item => {
+                            const isActive = activeTab === item.key;
+                            return (
+                                <button
+                                    key={item.key}
+                                    onClick={() => { onTabChange(item.key); setIsMobileMoreOpen(false); }}
+                                    className={`flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-2xl transition-all duration-200 active:scale-90 ${isActive
+                                        ? 'bg-indigo-500/15 text-indigo-600 scale-105'
+                                        : 'text-gray-400 hover:text-gray-600'
+                                        }`}
+                                >
+                                    <i className={`fas ${item.icon} text-[18px] ${isActive ? 'drop-shadow-sm' : ''}`}></i>
+                                    <span className={`text-[9px] font-bold uppercase tracking-tighter leading-none mt-0.5 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                                        {item.label}
+                                    </span>
+                                </button>
+                            );
+                        })}
+
+                        {/* More / Más button */}
+                        <button
+                            onClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
+                            className={`flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-2xl transition-all duration-200 active:scale-90 ${isMobileMoreOpen || isMoreActive
+                                ? 'bg-indigo-500/15 text-indigo-600 scale-105'
+                                : 'text-gray-400 hover:text-gray-600'
+                                }`}
+                        >
+                            <i className={`fas ${isMobileMoreOpen ? 'fa-times' : 'fa-ellipsis-h'} text-[18px]`}></i>
+                            <span className={`text-[9px] font-bold uppercase tracking-tighter leading-none mt-0.5 ${isMobileMoreOpen || isMoreActive ? 'opacity-100' : 'opacity-70'}`}>
+                                Más
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

@@ -20,7 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
     const [quickClientId, setQuickClientId] = useState('');
     const [quickServiceId, setQuickServiceId] = useState('');
     const [quickItems, setQuickItems] = useState<Array<{ id: string; serviceId: string; serviceName: string; quantity: number; price: number }>>([]);
-    const [quickValidity, setQuickValidity] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+    const [quickValidity, setQuickValidity] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
     const [quickQuoteNumber, setQuickQuoteNumber] = useState('');
 
     // Search State
@@ -37,8 +37,8 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
     const [quickClientForm, setQuickClientForm] = useState({ name: '', ruc: '', phone: '', contact: '' });
     const [quickServiceForm, setQuickServiceForm] = useState({ code: '', name: '', price: '', category: 'General' });
 
-    const mode = dataManager.getMode();
-    const sourceLabel = mode === 'firebase' ? 'Nube' : 'Local';
+
+
     const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
 
     // Load Data
@@ -307,13 +307,19 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
     if (loading) return <div className="p-8 text-center">Cargando escritorio...</div>;
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
+        <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in pb-24">
+            {/* Header Liquid Glass */}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white/40 backdrop-blur-xl p-6 rounded-[2rem] border border-white/60 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-400/20 to-purple-400/20 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2"></div>
+
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Escritorio</h2>
-                    <p className="text-gray-500">Resumen de actividad y accesos rápidos ({sourceLabel})</p>
+                    <h2 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-900 tracking-tight">
+                        Escritorio
+                    </h2>
+                    <p className="text-gray-600 font-medium mt-1">Resumen de actividad y accesos rápidos</p>
                 </div>
-                <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
+                <div className="text-sm font-medium text-indigo-900 bg-white/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/80 shadow-sm flex items-center gap-2">
+                    <i className="far fa-calendar-alt text-indigo-500"></i>
                     {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
             </div>
@@ -322,29 +328,65 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                 {/* Left Column: Widgets */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* KPI Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                            <p className="text-xs text-gray-500 uppercase font-bold mb-1">Ventas (Mes)</p>
-                            <p className="text-2xl font-bold text-gray-800">${kpis.totalSales.toFixed(0)}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                        {/* KPI: Ventas */}
+                        <div className="bg-white/40 backdrop-blur-xl p-5 md:p-6 rounded-[2rem] border border-white/60 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
+                            <div className="absolute -top-6 -right-6 w-24 h-24 bg-emerald-400/20 rounded-full blur-2xl group-hover:bg-emerald-400/30 transition-colors"></div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+                                    <i className="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Ventas (Mes)</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-800">${kpis.totalSales.toFixed(0)}</p>
                         </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                            <p className="text-xs text-gray-500 uppercase font-bold mb-1">Pendiente</p>
-                            <p className="text-2xl font-bold text-orange-600">${kpis.totalPending.toFixed(0)}</p>
+
+                        {/* KPI: Pendiente */}
+                        <div className="bg-white/40 backdrop-blur-xl p-5 md:p-6 rounded-[2rem] border border-white/60 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
+                            <div className="absolute -top-6 -right-6 w-24 h-24 bg-amber-400/20 rounded-full blur-2xl group-hover:bg-amber-400/30 transition-colors"></div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                                    <i className="far fa-clock"></i>
+                                </div>
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Pendiente</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-800">${kpis.totalPending.toFixed(0)}</p>
                         </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                            <p className="text-xs text-gray-500 uppercase font-bold mb-1">Contratos</p>
-                            <p className="text-2xl font-bold text-indigo-600">{kpis.activeContracts}</p>
+
+                        {/* KPI: Contratos */}
+                        <div className="bg-white/40 backdrop-blur-xl p-5 md:p-6 rounded-[2rem] border border-white/60 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
+                            <div className="absolute -top-6 -right-6 w-24 h-24 bg-indigo-400/20 rounded-full blur-2xl group-hover:bg-indigo-400/30 transition-colors"></div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
+                                    <i className="fas fa-file-signature"></i>
+                                </div>
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Contratos</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-800">{kpis.activeContracts}</p>
                         </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                            <p className="text-xs text-gray-500 uppercase font-bold mb-1">Renovaciones</p>
-                            <p className="text-2xl font-bold text-green-600">{kpis.renewalsThisMonth}</p>
+
+                        {/* KPI: Renovaciones */}
+                        <div className="bg-white/40 backdrop-blur-xl p-5 md:p-6 rounded-[2rem] border border-white/60 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
+                            <div className="absolute -top-6 -right-6 w-24 h-24 bg-pink-400/20 rounded-full blur-2xl group-hover:bg-pink-400/30 transition-colors"></div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-pink-500/30 group-hover:scale-110 transition-transform">
+                                    <i className="fas fa-sync-alt"></i>
+                                </div>
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Renovaciones</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-800">{kpis.renewalsThisMonth}</p>
                         </div>
                     </div>
 
                     {/* Charts Row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Estatus de Cotizaciones</h3>
+                        {/* Estatus Chart Liquid Glass */}
+                        <div className="bg-white/40 backdrop-blur-xl p-6 rounded-[2rem] border border-white/60 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-200/50 rounded-full blur-3xl -z-10"></div>
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i className="fas fa-chart-pie text-indigo-500"></i>
+                                Estatus de Cotizaciones
+                            </h3>
                             <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
@@ -356,33 +398,52 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                             outerRadius={80}
                                             paddingAngle={5}
                                             dataKey="value"
+                                            stroke="transparent"
                                         >
                                             {statusData.map((_, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip />
-                                        <Legend verticalAlign="bottom" height={36} />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                                backdropFilter: 'blur(12px)',
+                                                borderRadius: '1rem',
+                                                border: '1px solid rgba(255,255,255,0.6)',
+                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                                            }}
+                                        />
+                                        <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 500 }} />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Próximas Renovaciones</h3>
-                            <div className="overflow-y-auto max-h-64 space-y-3">
+                        {/* Upcoming Renewals Liquid Glass */}
+                        <div className="bg-white/40 backdrop-blur-xl p-6 rounded-[2rem] border border-white/60 shadow-xl relative overflow-hidden">
+                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-200/50 rounded-full blur-3xl -z-10"></div>
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i className="fas fa-calendar-alt text-rose-500"></i>
+                                Próximas Renovaciones
+                            </h3>
+                            <div className="overflow-y-auto max-h-64 space-y-3 custom-scrollbar pr-2">
                                 {upcomingRenewals.length === 0 ? (
-                                    <p className="text-gray-500 text-center py-8 text-sm">No hay renovaciones próximas.</p>
+                                    <div className="flex flex-col items-center justify-center h-40 text-center">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mb-3">
+                                            <i className="far fa-calendar-check text-2xl"></i>
+                                        </div>
+                                        <p className="text-gray-500 font-medium">No hay renovaciones próximas.</p>
+                                    </div>
                                 ) : (
                                     upcomingRenewals.map(c => (
-                                        <div key={c.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                        <div key={c.id} className="flex justify-between items-center p-4 bg-white/60 backdrop-blur-md rounded-2xl border border-white/80 shadow-sm hover:shadow-md transition-shadow">
                                             <div>
-                                                <p className="font-bold text-sm text-gray-800">{c.clientName}</p>
-                                                <p className="text-xs text-gray-500">{c.serviceName}</p>
+                                                <p className="font-bold text-sm text-gray-800 line-clamp-1">{c.clientName}</p>
+                                                <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{c.serviceName}</p>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-xs font-bold text-indigo-600">{c.nextRenewalDate}</p>
-                                                <p className="text-xs text-gray-500">${c.amount}</p>
+                                            <div className="text-right ml-4 shrink-0">
+                                                <p className="text-sm font-black bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-rose-500">{c.nextRenewalDate}</p>
+                                                <p className="text-xs font-bold text-gray-700">${c.amount}</p>
                                             </div>
                                         </div>
                                     ))
@@ -393,37 +454,48 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                 </div>
 
                 {/* Right Column: Quick Quote */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-xl font-bold text-gray-800 mb-6">Cotizar Rápido</h3>
+                {/* Right Column: Quick Quote Liquid Glass */}
+                <div className="hidden md:flex bg-white/60 backdrop-blur-2xl p-6 lg:p-8 rounded-[2rem] border border-white/80 shadow-2xl relative overflow-hidden flex-col h-full">
+                    <div className="absolute -top-32 -right-32 w-64 h-64 bg-gradient-to-br from-indigo-400/30 to-rose-400/30 rounded-full blur-3xl -z-10"></div>
 
-                    <div className="space-y-4">
+                    <h3 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-indigo-900 mb-6 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+                            <i className="fas fa-bolt"></i>
+                        </div>
+                        Cotizar Rápido
+                    </h3>
+
+                    <div className="space-y-5 flex-grow">
                         {/* Quote Number & Periodicity */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1 ml-1">Número</label>
                                 <input
                                     type="text"
                                     value={quickQuoteNumber}
                                     onChange={(e) => setQuickQuoteNumber(e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                                    className="w-full p-3 border border-white/60 rounded-2xl text-sm bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-sm"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Validez</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1 ml-1">Validez</label>
                                 <input
                                     type="date"
                                     value={quickValidity}
                                     onChange={(e) => setQuickValidity(e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                                    className="w-full p-3 border border-white/60 rounded-2xl text-sm bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-sm"
                                 />
                             </div>
                         </div>
 
                         {/* Client Selector with Search */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                        <div className="relative z-20">
+                            <label className="block text-sm font-bold text-gray-700 mb-1 ml-1">Cliente</label>
                             <div className="flex space-x-2 relative">
-                                <div className="w-full relative">
+                                <div className="w-full relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i className="fas fa-user-circle text-gray-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                                    </div>
                                     <input
                                         type="text"
                                         placeholder="Buscar cliente..."
@@ -435,33 +507,41 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                         }}
                                         onFocus={() => setShowClientDropdown(true)}
                                         onBlur={() => setTimeout(() => setShowClientDropdown(false), 200)}
-                                        className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                                        className="w-full p-3 pl-10 border border-white/60 rounded-2xl text-sm bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-sm"
                                     />
                                     {showClientDropdown && (
-                                        <div className="absolute z-50 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                            {filteredClients.map(c => (
-                                                <div key={c.id} className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100" onClick={() => selectClient(c)}>
-                                                    <div className="font-medium text-gray-900">{c.name}</div>
-                                                    <div className="text-xs text-gray-500">{c.ruc}</div>
-                                                </div>
-                                            ))}
+                                        <div className="absolute z-50 w-full bg-white/90 backdrop-blur-2xl border border-white/60 mt-2 rounded-2xl shadow-xl max-h-60 overflow-y-auto overflow-hidden">
+                                            {filteredClients.length === 0 ? (
+                                                <div className="p-4 text-center text-sm text-gray-500">No se encontraron clientes</div>
+                                            ) : (
+                                                filteredClients.map((c, i) => (
+                                                    <div key={c.id} className={`p-3 cursor-pointer hover:bg-indigo-50 transition-colors ${i !== filteredClients.length - 1 ? 'border-b border-gray-100' : ''}`} onClick={() => selectClient(c)}>
+                                                        <div className="font-bold text-gray-800">{c.name}</div>
+                                                        <div className="text-xs text-indigo-500 font-medium">{c.ruc}</div>
+                                                    </div>
+                                                ))
+                                            )}
                                         </div>
                                     )}
                                 </div>
                                 <button
                                     onClick={() => setShowQuickClientModal(true)}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors"
+                                    className="bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white w-12 rounded-2xl shadow-md transition-all flex items-center justify-center transform hover:scale-105"
+                                    title="Nuevo Cliente"
                                 >
-                                    <i className="fas fa-user-plus"></i>
+                                    <i className="fas fa-plus"></i>
                                 </button>
                             </div>
                         </div>
 
                         {/* Service Selector with Search */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Producto / Servicio</label>
-                            <div className="flex space-x-2 relative mb-2">
-                                <div className="w-full relative">
+                        <div className="relative z-10">
+                            <label className="block text-sm font-bold text-gray-700 mb-1 ml-1">Producto / Servicio</label>
+                            <div className="flex space-x-2 relative mb-3">
+                                <div className="w-full relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i className="fas fa-box-open text-gray-400 group-focus-within:text-emerald-500 transition-colors"></i>
+                                    </div>
                                     <input
                                         type="text"
                                         placeholder="Buscar servicio..."
@@ -473,22 +553,30 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                         }}
                                         onFocus={() => setShowServiceDropdown(true)}
                                         onBlur={() => setTimeout(() => setShowServiceDropdown(false), 200)}
-                                        className="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                                        className="w-full p-3 pl-10 border border-white/60 rounded-2xl text-sm bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all shadow-sm"
                                     />
                                     {showServiceDropdown && (
-                                        <div className="absolute z-50 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                            {filteredServices.map(s => (
-                                                <div key={s.id} className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100" onClick={() => selectService(s)}>
-                                                    <div className="font-medium text-gray-900">{s.name}</div>
-                                                    <div className="text-xs flex justify-between text-gray-500"><span>{s.code}</span><span className="font-bold">${s.price}</span></div>
-                                                </div>
-                                            ))}
+                                        <div className="absolute z-50 w-full bg-white/90 backdrop-blur-2xl border border-white/60 mt-2 rounded-2xl shadow-xl max-h-60 overflow-y-auto overflow-hidden">
+                                            {filteredServices.length === 0 ? (
+                                                <div className="p-4 text-center text-sm text-gray-500">No se encontraron productos</div>
+                                            ) : (
+                                                filteredServices.map((s, i) => (
+                                                    <div key={s.id} className={`p-3 cursor-pointer hover:bg-emerald-50 transition-colors ${i !== filteredServices.length - 1 ? 'border-b border-gray-100' : ''}`} onClick={() => selectService(s)}>
+                                                        <div className="font-bold text-gray-800">{s.name}</div>
+                                                        <div className="text-xs flex justify-between items-center mt-1">
+                                                            <span className="text-gray-500 px-2 py-0.5 bg-gray-100 rounded-md font-mono">{s.code}</span>
+                                                            <span className="font-bold text-emerald-600">${s.price.toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
                                         </div>
                                     )}
                                 </div>
                                 <button
                                     onClick={() => setShowQuickServiceModal(true)}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors"
+                                    className="bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white w-12 rounded-2xl shadow-md transition-all flex items-center justify-center transform hover:scale-105"
+                                    title="Nuevo Servicio"
                                 >
                                     <i className="fas fa-plus"></i>
                                 </button>
@@ -496,33 +584,29 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                             <button
                                 onClick={handleAddItem}
                                 disabled={!quickServiceId}
-                                className="w-full mt-2 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed uppercase text-sm tracking-wide transition-colors"
-                                title="Agregar a la lista"
+                                className="w-full py-3 bg-white/70 hover:bg-white border border-indigo-200 text-indigo-700 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed uppercase text-sm tracking-widest shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
                                 type="button"
                             >
-                                AÑADIR
+                                <i className="fas fa-level-down-alt"></i> AÑADIR A LA LISTA
                             </button>
                         </div>
 
                         {/* Items List */}
                         {quickItems.length > 0 && (
-                            <div className="border border-gray-200 rounded-lg overflow-hidden">
-                                <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">
-                                    <span className="text-xs font-bold text-gray-500 uppercase">Permite modificar</span>
-                                </div>
-                                <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
-                                    <div className="grid grid-cols-12 gap-2 text-xs font-bold text-gray-600">
-                                        <div className="col-span-6">Servicio</div>
-                                        <div className="col-span-2 text-center">Cant.</div>
-                                        <div className="col-span-3 text-right">Precio</div>
+                            <div className="border border-white/60 bg-white/40 rounded-2xl overflow-hidden shadow-inner flex flex-col mt-4 max-h-[250px]">
+                                <div className="bg-white/60 px-4 py-2 border-b border-white/60 backdrop-blur-md">
+                                    <div className="grid grid-cols-12 gap-2 text-xs font-black text-indigo-900 uppercase tracking-widest">
+                                        <div className="col-span-6">Ítem</div>
+                                        <div className="col-span-2 text-center">Cant</div>
+                                        <div className="col-span-3 text-right">Monto</div>
                                         <div className="col-span-1"></div>
                                     </div>
                                 </div>
-                                <div className="max-h-48 overflow-y-auto">
+                                <div className="overflow-y-auto custom-scrollbar flex-grow">
                                     {quickItems.map(item => (
-                                        <div key={item.id} className="px-3 py-3 border-b border-gray-100 hover:bg-gray-50">
+                                        <div key={item.id} className="px-4 py-3 border-b border-white/40 hover:bg-white/60 transition-colors">
                                             <div className="grid grid-cols-12 gap-2 items-center">
-                                                <div className="col-span-6 text-sm font-medium text-gray-800 truncate">
+                                                <div className="col-span-6 text-sm font-bold text-gray-800 line-clamp-2 leading-tight">
                                                     {item.serviceName}
                                                 </div>
                                                 <div className="col-span-2">
@@ -531,19 +615,19 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                                                         min="1"
                                                         value={item.quantity}
                                                         onChange={(e) => handleItemQuantityChange(item.id, parseInt(e.target.value))}
-                                                        className="w-full p-1 text-center border border-gray-300 rounded text-sm bg-white text-gray-900"
+                                                        className="w-full p-1.5 text-center border border-white/80 rounded-lg text-sm bg-white/80 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                                     />
                                                 </div>
-                                                <div className="col-span-3 text-sm font-bold text-gray-800 text-right">
+                                                <div className="col-span-3 text-sm font-black text-gray-800 text-right">
                                                     ${(item.price * item.quantity).toFixed(2)}
                                                 </div>
                                                 <div className="col-span-1 flex justify-end">
                                                     <button
                                                         onClick={() => handleRemoveItem(item.id)}
-                                                        className="text-red-500 hover:text-red-700 transition"
+                                                        className="w-6 h-6 rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
                                                         title="Eliminar"
                                                     >
-                                                        <i className="fas fa-times"></i>
+                                                        <i className="fas fa-times text-xs"></i>
                                                     </button>
                                                 </div>
                                             </div>
@@ -555,82 +639,87 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
 
                         {/* Totals Display */}
                         {quickItems.length > 0 && (
-                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Subtotal:</span>
+                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-2xl border border-gray-200 shadow-sm mt-4 space-y-3">
+                                <div className="flex justify-between text-sm py-1">
+                                    <span className="text-gray-500 font-bold uppercase tracking-wider">Subtotal:</span>
                                     <span className="font-bold text-gray-800">${quickTotals.subtotal.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">IVA (15%):</span>
+                                <div className="flex justify-between text-sm py-1">
+                                    <span className="text-gray-500 font-bold uppercase tracking-wider">IVA (15%):</span>
                                     <span className="font-bold text-gray-800">${quickTotals.iva.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-base pt-2 border-t border-gray-300">
-                                    <span className="font-bold text-gray-800">Total:</span>
-                                    <span className="font-bold text-indigo-600 text-lg">${quickTotals.total.toFixed(2)}</span>
+                                <div className="flex justify-between items-end pt-3 border-t border-gray-200">
+                                    <span className="font-black text-gray-800 text-lg uppercase">Total:</span>
+                                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-rose-500 text-3xl leading-none">
+                                        ${quickTotals.total.toFixed(2)}
+                                    </span>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-gray-100">
+                    <div className="mt-8 pt-6 border-t border-white/60">
                         <button
                             onClick={handleQuickQuote}
-                            className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                            className="w-full py-4 bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 text-white rounded-[1.5rem] font-black text-lg hover:from-pink-600 hover:via-red-600 hover:to-orange-600 transition-all shadow-[0_10px_20px_-10px_rgba(239,68,68,0.5)] hover:shadow-[0_15px_30px_-10px_rgba(239,68,68,0.7)] transform hover:-translate-y-1"
                         >
-                            Crear Cotización
+                            CREAR COTIZACIÓN
                         </button>
-                        <p className="text-xs text-center text-gray-400 mt-4">
-                            Se creará una cotización en estado "Pendiente".
-                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Quick Client Modal */}
+            {/* Quick Client Modal Liquid Glass */}
             {showQuickClientModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Nuevo Cliente Rápido</h3>
+                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white/80 backdrop-blur-2xl rounded-[2rem] border border-white/60 shadow-2xl max-w-md w-full p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-200/50 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2"></div>
+                        <h3 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                <i className="fas fa-user-plus"></i>
+                            </div>
+                            Nuevo Cliente
+                        </h3>
                         <div className="space-y-4">
                             <input
                                 type="text"
                                 placeholder="Nombre *"
                                 value={quickClientForm.name}
                                 onChange={(e) => setQuickClientForm({ ...quickClientForm, name: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                className="w-full p-4 border border-white/60 rounded-2xl bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
                             />
                             <input
                                 type="text"
                                 placeholder="RUC/CI *"
                                 value={quickClientForm.ruc}
                                 onChange={(e) => setQuickClientForm({ ...quickClientForm, ruc: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                className="w-full p-4 border border-white/60 rounded-2xl bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
                             />
                             <input
                                 type="text"
                                 placeholder="Teléfono"
                                 value={quickClientForm.phone}
                                 onChange={(e) => setQuickClientForm({ ...quickClientForm, phone: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                className="w-full p-4 border border-white/60 rounded-2xl bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
                             />
                             <input
                                 type="email"
                                 placeholder="Email"
                                 value={quickClientForm.contact}
                                 onChange={(e) => setQuickClientForm({ ...quickClientForm, contact: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                className="w-full p-4 border border-white/60 rounded-2xl bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
                             />
                         </div>
-                        <div className="flex gap-3 mt-6">
+                        <div className="flex gap-4 mt-8">
                             <button
                                 onClick={() => setShowQuickClientModal(false)}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                                className="flex-1 px-4 py-3 border border-gray-300 rounded-2xl text-gray-700 font-bold hover:bg-gray-50 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleQuickClient}
-                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                                className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:from-indigo-600 hover:to-purple-700 transition-all"
                             >
                                 Guardar
                             </button>
@@ -639,56 +728,67 @@ const Dashboard: React.FC<DashboardProps> = ({ settings }) => {
                 </div>
             )}
 
-            {/* Quick Service Modal */}
+            {/* Quick Service Modal Liquid Glass */}
             {showQuickServiceModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Nuevo Producto Rápido</h3>
+                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white/80 backdrop-blur-2xl rounded-[2rem] border border-white/60 shadow-2xl max-w-md w-full p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-200/50 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2"></div>
+                        <h3 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                <i className="fas fa-box-open"></i>
+                            </div>
+                            Nuevo Producto
+                        </h3>
                         <div className="space-y-4">
                             <input
                                 type="text"
                                 placeholder="Nombre *"
                                 value={quickServiceForm.name}
                                 onChange={(e) => setQuickServiceForm({ ...quickServiceForm, name: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                className="w-full p-4 border border-white/60 rounded-2xl bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm transition-all"
                             />
                             <input
                                 type="text"
                                 placeholder="Código (Opcional)"
                                 value={quickServiceForm.code}
                                 onChange={(e) => setQuickServiceForm({ ...quickServiceForm, code: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                className="w-full p-4 border border-white/60 rounded-2xl bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm transition-all"
                             />
                             <input
                                 type="number"
                                 placeholder="Precio *"
                                 value={quickServiceForm.price}
                                 onChange={(e) => setQuickServiceForm({ ...quickServiceForm, price: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                className="w-full p-4 border border-white/60 rounded-2xl bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm transition-all"
                             />
-                            <select
-                                value={quickServiceForm.category}
-                                onChange={(e) => setQuickServiceForm({ ...quickServiceForm, category: e.target.value })}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-900"
-                            >
-                                <option value="General">General</option>
-                                <option value="Hosting">Hosting</option>
-                                <option value="Dominio">Dominio</option>
-                                <option value="Desarrollo">Desarrollo</option>
-                                <option value="Diseño">Diseño</option>
-                                <option value="Marketing">Marketing</option>
-                            </select>
+                            <div className="relative">
+                                <select
+                                    value={quickServiceForm.category}
+                                    onChange={(e) => setQuickServiceForm({ ...quickServiceForm, category: e.target.value })}
+                                    className="w-full p-4 border border-white/60 rounded-2xl bg-white/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm transition-all appearance-none"
+                                >
+                                    <option value="General">General</option>
+                                    <option value="Hosting">Hosting</option>
+                                    <option value="Dominio">Dominio</option>
+                                    <option value="Desarrollo">Desarrollo</option>
+                                    <option value="Diseño">Diseño</option>
+                                    <option value="Marketing">Marketing</option>
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                                    <i className="fas fa-chevron-down text-sm"></i>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex gap-3 mt-6">
+                        <div className="flex gap-4 mt-8">
                             <button
                                 onClick={() => setShowQuickServiceModal(false)}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                                className="flex-1 px-4 py-3 border border-gray-300 rounded-2xl text-gray-700 font-bold hover:bg-gray-50 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleQuickService}
-                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                                className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:from-emerald-600 hover:to-teal-700 transition-all"
                             >
                                 Guardar
                             </button>

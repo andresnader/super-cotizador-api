@@ -101,7 +101,9 @@ class DataManager implements DataService {
             try {
                 const settings = await firestoreService.fetchCompanySettings();
                 // Merge with default settings to ensure all fields exist
-                return { ...storageService.getCompanySettings(), ...settings };
+                const finalSettings = { ...storageService.getCompanySettings(), ...settings };
+                storageService.saveCompanySettings(finalSettings); /* Sync to avoid flickering */
+                return finalSettings;
             } catch (e) {
                 console.warn("Error fetching settings from Firestore, falling back to local", e);
                 return storageService.getCompanySettings();

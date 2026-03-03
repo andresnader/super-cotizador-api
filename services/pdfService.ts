@@ -8,6 +8,9 @@ import jsPDF from 'jspdf';
  * Helper to generate a captured canvas from the print section
  */
 async function capturePrintSection(): Promise<HTMLCanvasElement> {
+    // Ensure all custom fonts are completely loaded before capturing
+    await document.fonts.ready;
+
     const element = document.getElementById('print-section');
     if (!element) {
         throw new Error('No se encontró la sección de impresión');
@@ -26,6 +29,14 @@ async function capturePrintSection(): Promise<HTMLCanvasElement> {
             if (clonedElement) {
                 clonedElement.style.display = 'block';
                 clonedElement.style.padding = '20px'; // Add some internal padding before capture
+
+                // Workaround for local dev CORS with the default logo
+                const images = clonedElement.getElementsByTagName('img');
+                for (let i = 0; i < images.length; i++) {
+                    if (images[i].src && images[i].src.includes('ameizin.red/cotizador/ameizin-img.png')) {
+                        images[i].src = '/cotizador/ameizin-img.png';
+                    }
+                }
             }
         }
     });

@@ -136,15 +136,15 @@ const DataManager: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Firebase info banner */}
             {mode === 'firebase' && (
-                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                <div className="bg-indigo-50/50 backdrop-blur-md border border-indigo-200/50 rounded-3xl p-5 shadow-sm">
                     <div className="flex items-center">
-                        <i className="fas fa-cloud text-indigo-600 mr-3 text-lg"></i>
+                        <i className="fas fa-cloud text-indigo-500 mr-4 text-xl"></i>
                         <div>
-                            <h3 className="font-semibold text-indigo-800">Datos sincronizados en la nube</h3>
-                            <p className="text-sm text-indigo-600">Tus datos se guardan automáticamente en Firebase Firestore.</p>
+                            <h3 className="font-bold text-indigo-900 mb-1">Datos sincronizados en la nube</h3>
+                            <p className="text-sm font-medium text-indigo-700/80">Tus datos se guardan automáticamente en Firebase Firestore.</p>
                         </div>
                     </div>
                 </div>
@@ -152,16 +152,16 @@ const DataManager: React.FC = () => {
 
             {/* Firebase Import Section */}
             {mode === 'firebase' && (
-                <div className="bg-white rounded-xl border border-indigo-200 p-6 shadow-sm">
-                    <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center">
-                        <i className="fas fa-cloud-upload-alt text-indigo-600 mr-2"></i>
+                <div className="bg-white/40 backdrop-blur-xl border border-white/60 p-6 lg:p-8 rounded-[2rem] shadow-sm">
+                    <h2 className="text-xl font-extrabold text-slate-800 mb-2 flex items-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-800 to-purple-800">
+                        <i className="fas fa-cloud-upload-alt text-indigo-600 mr-3"></i>
                         Importar Datos a Firebase
                     </h2>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm font-medium text-slate-600 mb-6">
                         Sube un archivo JSON de backup para migrar todos tus datos (clientes, servicios, cotizaciones, contratos) a Firebase.
                     </p>
-                    <label className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-semibold cursor-pointer">
-                        <i className="fas fa-file-import mr-2"></i>
+                    <label className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all font-bold cursor-pointer shadow-sm">
+                        <i className="fas fa-file-import mr-3"></i>
                         Seleccionar archivo JSON
                         <input
                             type="file"
@@ -174,25 +174,27 @@ const DataManager: React.FC = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-6">Importación Masiva (CSV)</h2>
+            <div className="bg-white/40 backdrop-blur-xl border border-white/60 p-6 lg:p-8 rounded-[2rem] shadow-sm">
+                <h2 className="text-2xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-800 to-purple-800">Importación Masiva (CSV)</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Clientes */}
-                    <div className="border border-gray-200 rounded-lg p-5">
-                        <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-                            <i className="fas fa-users text-blue-600 mr-2"></i>
+                    <div className="bg-white/50 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-sm">
+                        <h3 className="font-bold text-slate-800 mb-5 flex items-center text-lg">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mr-3 text-blue-600 shadow-inner">
+                                <i className="fas fa-users"></i>
+                            </div>
                             Clientes
                         </h3>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             <button
                                 onClick={handleClientTemplateDownload}
-                                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm flex items-center justify-center"
+                                className="w-full px-4 py-3 bg-white/60 backdrop-blur-md border border-white/60 rounded-xl hover:bg-white/80 transition-all text-sm font-bold text-slate-700 shadow-sm flex items-center justify-center"
                             >
                                 <i className="fas fa-download mr-2 text-blue-600"></i>
                                 Descargar Plantilla
                             </button>
-                            <label className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm flex items-center justify-center cursor-pointer">
+                            <label className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all text-sm font-bold flex items-center justify-center cursor-pointer shadow-sm">
                                 <i className="fas fa-file-csv mr-2"></i>
                                 Seleccionar CSV
                                 <input
@@ -207,20 +209,22 @@ const DataManager: React.FC = () => {
                     </div>
 
                     {/* Servicios */}
-                    <div className="border border-gray-200 rounded-lg p-5">
-                        <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-                            <i className="fas fa-concierge-bell text-green-600 mr-2"></i>
+                    <div className="bg-white/50 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-sm">
+                        <h3 className="font-bold text-slate-800 mb-5 flex items-center text-lg">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-100 to-emerald-200 flex items-center justify-center mr-3 text-emerald-600 shadow-inner">
+                                <i className="fas fa-concierge-bell"></i>
+                            </div>
                             Servicios
                         </h3>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             <button
                                 onClick={handleServiceTemplateDownload}
-                                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm flex items-center justify-center"
+                                className="w-full px-4 py-3 bg-white/60 backdrop-blur-md border border-white/60 rounded-xl hover:bg-white/80 transition-all text-sm font-bold text-slate-700 shadow-sm flex items-center justify-center"
                             >
-                                <i className="fas fa-download mr-2 text-green-600"></i>
+                                <i className="fas fa-download mr-2 text-emerald-600"></i>
                                 Descargar Plantilla
                             </button>
-                            <label className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm flex items-center justify-center cursor-pointer">
+                            <label className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all text-sm font-bold flex items-center justify-center cursor-pointer shadow-sm">
                                 <i className="fas fa-file-csv mr-2"></i>
                                 Seleccionar CSV
                                 <input
@@ -237,23 +241,23 @@ const DataManager: React.FC = () => {
             </div>
 
             {/* JSON Backup Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-2">Gestión de Datos (Backup)</h2>
-                <p className="text-sm text-gray-600 mb-6">
+            <div className="bg-white/40 backdrop-blur-xl border border-white/60 p-6 lg:p-8 rounded-[2rem] shadow-sm">
+                <h2 className="text-2xl font-extrabold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-800 to-purple-800">Gestión de Datos (Backup)</h2>
+                <p className="text-sm font-medium text-slate-600 mb-8">
                     Exporte o importe todos los datos (clientes, servicios, historial) en formato JSON para copias de seguridad.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
                         onClick={handleExportJSON}
-                        className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition font-semibold flex items-center justify-center"
+                        className="px-6 py-4 bg-slate-800 text-white rounded-xl hover:bg-slate-900 hover:shadow-lg hover:shadow-slate-800/20 transition-all font-bold flex items-center justify-center shadow-sm"
                     >
-                        <i className="fas fa-download mr-2"></i>
+                        <i className="fas fa-download mr-3"></i>
                         Exportar JSON
                     </button>
 
-                    <label className="px-6 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition font-semibold flex items-center justify-center cursor-pointer">
-                        <i className="fas fa-upload mr-2"></i>
+                    <label className="px-6 py-4 bg-white/60 backdrop-blur-md border border-slate-300 text-slate-700 rounded-xl hover:bg-white/80 hover:shadow-md transition-all font-bold flex items-center justify-center cursor-pointer shadow-sm">
+                        <i className="fas fa-upload mr-3 text-slate-500"></i>
                         Importar JSON
                         <input
                             type="file"
@@ -267,10 +271,11 @@ const DataManager: React.FC = () => {
             </div>
 
             {isImporting && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-8 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                        <p className="text-gray-700 font-medium">Procesando...</p>
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 transition-all">
+                    <div className="bg-white/90 backdrop-blur-xl rounded-[2rem] p-10 text-center shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
+                        <div className="animate-spin rounded-full h-14 w-14 border-4 border-indigo-100 border-t-indigo-600 mx-auto mb-6 shadow-sm"></div>
+                        <p className="text-indigo-900 font-bold text-lg">Procesando...</p>
+                        <p className="text-slate-500 text-sm mt-2 font-medium">Por favor, espera un momento</p>
                     </div>
                 </div>
             )}

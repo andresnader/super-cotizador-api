@@ -12,70 +12,72 @@ interface ClientsProps {
 interface ClientFormProps {
     form: Partial<Client>;
     isEditing: boolean;
-    mode: 'firebase' | 'local' | null;
+
     onFormChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (e: React.FormEvent) => void;
     onCancel: () => void;
 }
 
-const ClientForm: React.FC<ClientFormProps> = ({ form, isEditing, mode, onFormChange, onSubmit, onCancel }) => (
-    <form onSubmit={onSubmit} className="space-y-4">
-        {/* Row 1: Name */}
-        <div>
-            <input
-                name="name"
-                value={form.name || ''}
-                onChange={onFormChange}
-                placeholder="Razon Social *"
-                required
-                className="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-        </div>
+const ClientForm: React.FC<ClientFormProps> = ({ form, isEditing, onFormChange, onSubmit, onCancel }) => (
+    <form onSubmit={onSubmit} className="space-y-5">
+        <div className="space-y-4">
+            {/* Row 1: Name */}
+            <div>
+                <input
+                    name="name"
+                    value={form.name || ''}
+                    onChange={onFormChange}
+                    placeholder="Razón Social *"
+                    required
+                    className="w-full p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-sm"
+                />
+            </div>
 
-        {/* Row 2: RUC & Email */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-                name="ruc"
-                value={form.ruc || ''}
-                onChange={onFormChange}
-                placeholder="RUC *"
-                required
-                className="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-            <input
-                name="contact"
-                value={form.contact || ''}
-                onChange={onFormChange}
-                placeholder="Email / Contacto"
-                className="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-        </div>
+            {/* Row 2: RUC & Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                    name="ruc"
+                    value={form.ruc || ''}
+                    onChange={onFormChange}
+                    placeholder="RUC *"
+                    required
+                    className="w-full p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-sm"
+                />
+                <input
+                    name="contact"
+                    value={form.contact || ''}
+                    onChange={onFormChange}
+                    placeholder="Email / Contacto"
+                    className="w-full p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-sm"
+                />
+            </div>
 
-        {/* Row 3: Phone */}
-        <div>
-            <input
-                name="phone"
-                value={form.phone || ''}
-                onChange={onFormChange}
-                placeholder="Telefono"
-                className="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
+            {/* Row 3: Phone */}
+            <div>
+                <input
+                    name="phone"
+                    value={form.phone || ''}
+                    onChange={onFormChange}
+                    placeholder="Teléfono"
+                    className="w-full p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-sm"
+                />
+            </div>
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 mt-8">
             <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300 transition font-medium"
+                className="flex-1 bg-white/40 dark:bg-gray-700/40 hover:bg-white/60 dark:hover:bg-gray-600/60 text-gray-800 dark:text-gray-200 p-4 rounded-2xl transition font-medium backdrop-blur-md border border-white/50 dark:border-gray-600/50 shadow-sm"
             >
                 Cancelar
             </button>
             <button
                 type="submit"
-                className="flex-1 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition font-semibold shadow-md"
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white p-4 rounded-2xl transition font-bold shadow-lg shadow-emerald-500/30"
             >
-                {isEditing ? `Actualizar (${mode === 'local' ? 'Local' : 'Nube'})` : `Guardar (${mode === 'local' ? 'Local' : 'Nube'})`}
+                {isEditing ? 'Actualizar' : 'Guardar'}
             </button>
         </div>
     </form>
@@ -97,8 +99,8 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     const [quotesLoading, setQuotesLoading] = useState(false);
     const [activeDetailTab, setActiveDetailTab] = useState<'quotes' | 'contracts'>('quotes');
 
-    const mode = dataManager.getMode();
-    const sourceLabel = mode === 'firebase' ? 'Nube' : 'Local';
+
+
 
     const loadData = async () => {
         setLoading(true);
@@ -158,7 +160,7 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
 
     const handleDelete = async (id: string) => {
         if (!id) return;
-        if (confirm(`¿Eliminar cliente? Esta acción es permanente en ${sourceLabel}.`)) {
+        if (confirm(`¿Eliminar cliente? Esta acción es permanente.`)) {
             try {
                 await dataManager.deleteClient(id);
                 await loadData();
@@ -213,7 +215,6 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 <ClientForm
                     form={form}
                     isEditing={isEditing}
-                    mode={mode}
                     onFormChange={handleChange}
                     onSubmit={handleSubmit}
                     onCancel={() => setShowFormModal(false)}
@@ -223,24 +224,28 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
     }
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 max-w-6xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold text-gray-800">Gestión de Clientes ({sourceLabel})</h2>
+        <div className="animate-fade-in pb-24 max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 px-2">
+                <div className="flex flex-col">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Directorio</span>
+                    <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white drop-shadow-sm">
+                        Gestión de Clientes
+                    </h2>
+                </div>
                 <button
                     onClick={openCreateModal}
-                    className="w-full md:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center justify-center font-medium"
+                    className="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6 py-3.5 rounded-2xl transition-all shadow-lg shadow-emerald-500/30 flex items-center justify-center font-bold active:scale-[0.98]"
                 >
-                    <i className="fas fa-plus mr-2"></i> Agregar Nuevo Cliente
+                    <i className="fas fa-plus mr-2 text-lg"></i> Agregar Nuevo Cliente
                 </button>
             </div>
 
             <Modal isOpen={showFormModal} onClose={() => setShowFormModal(false)}>
                 <div className="p-6">
-                    <h2 className="text-xl font-bold mb-6 text-gray-800">{isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
+                    <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white drop-shadow-sm">{isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
                     <ClientForm
                         form={form}
                         isEditing={isEditing}
-                        mode={mode}
                         onFormChange={handleChange}
                         onSubmit={handleSubmit}
                         onCancel={() => setShowFormModal(false)}
@@ -248,49 +253,64 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
                 </div>
             </Modal>
 
-            <div className="mb-6 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-search text-gray-400"></i>
+            <div className="mb-8 px-2">
+                <div className="relative w-full group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i className="fas fa-search text-gray-400 group-focus-within:text-emerald-500 transition-colors"></i>
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Buscar por Nombre, RUC o Codigo..."
+                        className="w-full h-14 pl-12 pr-4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-2xl text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-sm outline-none"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
-                <input
-                    type="text"
-                    placeholder="Buscar cliente por Nombre, RUC o Codigo..."
-                    className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm bg-white"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            </div>
+
+            {/* List Header */}
+            <div className="px-3 mb-4 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">
+                    Directorio <span className="text-xs ml-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md">{filteredClients.length}</span>
+                </h2>
             </div>
 
             {loading ? (
-                <div className="text-center py-12 text-gray-500">Cargando datos...</div>
+                <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+                </div>
             ) : (
-                <div className="space-y-4">
+                <div className="flex flex-col gap-4">
                     {filteredClients.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                            No se encontraron clientes.
+                        <div className="text-center py-12 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-3xl shadow-sm">
+                            <p className="text-gray-500 dark:text-gray-400">No se encontraron clientes.</p>
                         </div>
                     ) : (
                         filteredClients.map(c => (
-                            <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-gray-900 leading-tight">{c.name}</h3>
-                                    <div className="text-sm text-gray-500 mt-1">
-                                        {c.contact && <span>{c.contact}</span>}
+                            <div key={c.id} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-3xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col gap-4">
+                                <div className="flex justify-between items-start">
+                                    <span className="bg-white/60 dark:bg-gray-700/60 text-gray-700 dark:text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full border border-white/40 dark:border-gray-600/50 uppercase tracking-tighter shadow-sm">
+                                        RUC: {c.ruc}
+                                    </span>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleEdit(c)} className="h-8 w-8 rounded-full flex items-center justify-center bg-white/50 dark:bg-gray-700/50 hover:bg-white/80 dark:hover:bg-gray-600/80 text-gray-600 dark:text-gray-300 transition-all shadow-sm border border-white/40 dark:border-gray-600/50">
+                                            <i className="fas fa-edit text-xs"></i>
+                                        </button>
+                                        <button onClick={() => handleDelete(c.id)} className="h-8 w-8 rounded-full flex items-center justify-center bg-white/50 dark:bg-gray-700/50 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-500 transition-all shadow-sm border border-white/40 dark:border-gray-600/50">
+                                            <i className="fas fa-trash text-xs"></i>
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex-1 md:text-right md:pr-8">
-                                    <div className="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded text-sm font-mono font-medium mb-1">
-                                        {c.ruc}
-                                    </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{c.name}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium truncate mt-0.5">
+                                        {c.contact || 'Sin correo de contacto'}
+                                    </p>
                                 </div>
-                                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                                    <button onClick={() => handleViewDetails(c)} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition flex items-center">
-                                        <i className="fas fa-folder-open mr-2"></i> Detalles
+                                <div className="flex items-center justify-between mt-2 pt-4 border-t border-white/30 dark:border-gray-700/50">
+                                    <button onClick={() => handleViewDetails(c)} className="bg-white/60 dark:bg-gray-700/60 hover:bg-white/90 dark:hover:bg-gray-600/90 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2 transition-all shadow-sm border border-white/50 dark:border-gray-600/50">
+                                        <i className="fas fa-eye text-emerald-600 dark:text-emerald-400"></i> Detalles
                                     </button>
-                                    <div className="flex gap-1">
-                                        <button onClick={() => handleEdit(c)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"><i className="fas fa-pencil-alt"></i></button>
-                                        <button onClick={() => handleDelete(c.id)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition"><i className="fas fa-trash"></i></button>
-                                    </div>
                                 </div>
                             </div>
                         ))
@@ -299,142 +319,153 @@ const Clients: React.FC<ClientsProps> = ({ isModal, onPrint }) => {
             )}
 
             <Modal isOpen={showQuotesModal} onClose={() => setShowQuotesModal(false)} maxWidth="max-w-4xl" hideCloseButton={true}>
-                <div className="p-6 bg-white h-full flex flex-col">
-                    <div className="flex justify-between items-start mb-6 pb-2 border-b border-gray-100">
+                <div className="p-6 h-full flex flex-col">
+                    <div className="flex justify-between items-start mb-6 pb-4 border-b border-gray-200 dark:border-gray-700/50">
                         <div>
-                            <h3 className="text-xl font-bold text-gray-800">Detalles del Cliente</h3>
-                            <p className="text-sm text-gray-500 mt-1">Cliente: <span className="font-medium text-gray-700">{selectedClientForQuotes?.name}</span></p>
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white drop-shadow-sm">Detalles del Cliente</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Cliente: <span className="font-semibold text-gray-700 dark:text-gray-300">{selectedClientForQuotes?.name}</span></p>
                         </div>
                         <button
                             onClick={() => setShowQuotesModal(false)}
-                            className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 h-10 w-10 flex items-center justify-center rounded-full bg-white/40 dark:bg-gray-700/40 hover:bg-white/80 dark:hover:bg-gray-600/80 backdrop-blur-md transition-all border border-white/50 dark:border-gray-600/50 shadow-sm"
                         >
                             <i className="fas fa-times text-xl"></i>
                         </button>
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex border-b border-gray-200 mb-4">
+                    <div className="flex border-b border-gray-200 dark:border-gray-700/50 mb-6 pb-2 gap-4 overflow-x-auto no-scrollbar">
                         <button
-                            className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeDetailTab === 'quotes' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`py-2 px-6 rounded-full font-bold text-sm transition-all focus:outline-none whitespace-nowrap ${activeDetailTab === 'quotes' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' : 'bg-white/40 dark:bg-gray-700/40 text-gray-600 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-gray-600/60'}`}
                             onClick={() => setActiveDetailTab('quotes')}
                         >
-                            <i className="fas fa-history mr-2"></i> Historial de Cotizaciones
+                            <i className="fas fa-history mr-2"></i> Cotizaciones
                         </button>
                         <button
-                            className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeDetailTab === 'contracts' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`py-2 px-6 rounded-full font-bold text-sm transition-all focus:outline-none whitespace-nowrap ${activeDetailTab === 'contracts' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' : 'bg-white/40 dark:bg-gray-700/40 text-gray-600 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-gray-600/60'}`}
                             onClick={() => setActiveDetailTab('contracts')}
                         >
-                            <i className="fas fa-file-contract mr-2"></i> Contratos Recurrentes
+                            <i className="fas fa-file-contract mr-2"></i> Contratos
                         </button>
                     </div>
 
-                    {quotesLoading ? <p className="text-center py-8 text-gray-500">Cargando datos...</p> : (
+                    {quotesLoading ? (
+                        <div className="flex justify-center items-center py-12">
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+                        </div>
+                    ) : (
                         <>
                             {activeDetailTab === 'quotes' && (
                                 clientQuotes.length === 0 ? (
-                                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                        <p className="text-gray-500">Este cliente no tiene cotizaciones registradas.</p>
+                                    <div className="text-center py-12 bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl rounded-3xl border border-white/40 dark:border-gray-700/50 shadow-sm">
+                                        <p className="text-gray-500 dark:text-gray-400">Este cliente no tiene cotizaciones registradas.</p>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto border rounded-lg">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Número</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fecha</th>
-                                                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase">Total</th>
-                                                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Estado</th>
-                                                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Doc</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {clientQuotes.map(q => (
-                                                    <tr key={q.id} className="hover:bg-gray-50 transition-colors">
-                                                        <td className="px-4 py-3 text-sm font-mono font-semibold text-indigo-600 whitespace-nowrap">{q.number}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{q.issueDate}</td>
-                                                        <td className="px-4 py-3 text-right text-sm font-bold text-gray-800 whitespace-nowrap">${q.total.toFixed(2)}</td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <div className="relative inline-block">
-                                                                <select
-                                                                    value={q.status}
-                                                                    onChange={(e) => handleQuoteStatusChange(q, e.target.value as any)}
-                                                                    className={`appearance-none pl-2 pr-6 py-1 rounded-md text-xs font-medium border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500
-                                                                        ${q.status === 'Aceptada' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                                            q.status === 'Rechazada' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                                                'bg-yellow-50 text-yellow-700 border-yellow-200'}`}
-                                                                >
-                                                                    <option value="Pendiente">Pendiente</option>
-                                                                    <option value="Aceptada">Aceptada</option>
-                                                                    <option value="Rechazada">Rechazada</option>
-                                                                </select>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center text-sm">
-                                                            <div className="flex justify-center items-center space-x-3">
-                                                                {q.pdfUrl && (
-                                                                    <a href={q.pdfUrl} target="_blank" className="text-blue-600 hover:text-blue-800" title="Ver PDF">
-                                                                        <i className="fas fa-file-alt"></i>
-                                                                    </a>
-                                                                )}
-                                                                {onPrint && (
-                                                                    <button onClick={() => onPrint(q)} className="text-gray-500 hover:text-gray-800" title="Imprimir">
-                                                                        <i className="fas fa-print"></i>
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </td>
+                                    <div className="overflow-hidden rounded-2xl border border-white/40 dark:border-gray-700/50 shadow-sm">
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-gray-200/50 dark:divide-gray-700/50">
+                                                <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-md">
+                                                    <tr>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Número</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha</th>
+                                                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Doc</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                                    {clientQuotes.map(q => (
+                                                        <tr key={q.id} className="hover:bg-white/60 dark:hover:bg-gray-700/40 transition-colors">
+                                                            <td className="px-4 py-4 text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">{q.number}</td>
+                                                            <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{q.issueDate}</td>
+                                                            <td className="px-4 py-4 text-right text-sm font-black text-gray-800 dark:text-gray-100 whitespace-nowrap">${q.total.toFixed(2)}</td>
+                                                            <td className="px-4 py-4 text-center">
+                                                                <div className="relative inline-block w-32">
+                                                                    <select
+                                                                        value={q.status}
+                                                                        onChange={(e) => handleQuoteStatusChange(q, e.target.value as any)}
+                                                                        className={`appearance-none w-full pl-3 pr-8 py-1.5 rounded-full text-[10px] font-bold uppercase border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-shadow
+                                                                            ${q.status === 'Aceptada' ? 'bg-emerald-100/60 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border-emerald-200/50' :
+                                                                                q.status === 'Rechazada' ? 'bg-rose-100/60 dark:bg-rose-900/30 text-rose-800 dark:text-rose-300 border-rose-200/50' :
+                                                                                    'bg-amber-100/60 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200/50'}`}
+                                                                    >
+                                                                        <option className="text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800" value="Pendiente">Pendiente</option>
+                                                                        <option className="text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800" value="Aceptada">Aceptada</option>
+                                                                        <option className="text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800" value="Rechazada">Rechazada</option>
+                                                                    </select>
+                                                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-60">
+                                                                        <i className="fas fa-chevron-down text-[10px]"></i>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-4 text-center">
+                                                                <div className="flex justify-center items-center gap-2">
+                                                                    {q.pdfUrl && (
+                                                                        <a href={q.pdfUrl} target="_blank" className="bg-white/50 dark:bg-gray-700/50 h-8 w-8 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 hover:bg-white/80 dark:hover:bg-gray-600/80 transition-all border border-white/40 shadow-sm" title="Ver PDF">
+                                                                            <i className="fas fa-file-pdf"></i>
+                                                                        </a>
+                                                                    )}
+                                                                    {onPrint && (
+                                                                        <button onClick={() => onPrint(q)} className="bg-white/50 dark:bg-gray-700/50 h-8 w-8 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-600/80 transition-all border border-white/40 shadow-sm" title="Imprimir">
+                                                                            <i className="fas fa-print text-sm"></i>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 )
                             )}
 
                             {activeDetailTab === 'contracts' && (
                                 clientContracts.length === 0 ? (
-                                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                        <p className="text-gray-500">Este cliente no tiene contratos activos.</p>
+                                    <div className="text-center py-12 bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl rounded-3xl border border-white/40 dark:border-gray-700/50 shadow-sm">
+                                        <p className="text-gray-500 dark:text-gray-400">Este cliente no tiene contratos activos.</p>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto border rounded-lg">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Servicio</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Proveedor</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Periodo</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Próx. Renovación</th>
-                                                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase">Monto</th>
-                                                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Estado</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {clientContracts.map(c => (
-                                                    <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                                                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                                                            {c.serviceName}
-                                                            <div className="text-xs text-gray-500">{c.serviceType}</div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm text-gray-600">{c.provider || '-'}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-600 capitalize">{c.period}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-600">
-                                                            {c.nextRenewalDate}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right text-sm font-bold text-gray-800">${c.amount.toFixed(2)}</td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium
-                                                                ${c.status === 'active' ? 'bg-green-100 text-green-800' :
-                                                                    c.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                                                                        'bg-red-100 text-red-800'}`}>
-                                                                {c.status === 'active' ? 'Activo' : c.status === 'paused' ? 'Pausado' : 'Cancelado'}
-                                                            </span>
-                                                        </td>
+                                    <div className="overflow-hidden rounded-2xl border border-white/40 dark:border-gray-700/50 shadow-sm">
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-gray-200/50 dark:divide-gray-700/50">
+                                                <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-md">
+                                                    <tr>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Servicio</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Proveedor</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Periodo</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Renovación</th>
+                                                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Monto</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                                    {clientContracts.map(c => (
+                                                        <tr key={c.id} className="hover:bg-white/60 dark:hover:bg-gray-700/40 transition-colors">
+                                                            <td className="px-4 py-4 text-sm font-bold text-gray-900 dark:text-white">
+                                                                {c.serviceName}
+                                                                <div className="text-[10px] uppercase font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{c.serviceType}</div>
+                                                            </td>
+                                                            <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300 font-medium">{c.provider || '-'}</td>
+                                                            <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300 font-medium capitalize">{c.period}</td>
+                                                            <td className="px-4 py-4 text-sm font-mono text-gray-600 dark:text-gray-300">
+                                                                {c.nextRenewalDate}
+                                                            </td>
+                                                            <td className="px-4 py-4 text-right text-sm font-black text-gray-800 dark:text-gray-100">${c.amount.toFixed(2)}</td>
+                                                            <td className="px-4 py-4 text-center">
+                                                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border
+                                                                    ${c.status === 'active' ? 'bg-emerald-100/60 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border-emerald-200/50' :
+                                                                        c.status === 'paused' ? 'bg-amber-100/60 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-200/50' :
+                                                                            'bg-rose-100/60 dark:bg-rose-900/30 text-rose-800 dark:text-rose-300 border-rose-200/50'}`}>
+                                                                    {c.status === 'active' ? 'Activo' : c.status === 'paused' ? 'Pausado' : 'Cancelado'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 )
                             )}
