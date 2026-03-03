@@ -18,14 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
 
     const isOperacionesActive = ['clientes', 'servicios', 'historial', 'operaciones'].includes(activeTab);
 
-    // Primary mobile tabs shown in the floating bottom bar
-    const mobileNavItems = [
-        { key: 'dashboard', icon: 'fa-desktop', label: 'Panel' },
-        { key: 'cotizador', icon: 'fa-file-invoice-dollar', label: 'Cotizar' },
-        { key: 'historial', icon: 'fa-history', label: 'Historial' },
-        { key: 'clientes', icon: 'fa-users', label: 'Clientes' },
-    ];
-
+    // Primary mobile tabs were replaced by the harcoded Liquid Glass structure
     // Secondary mobile tabs shown when "Más" is tapped
     const mobileMoreItems = [
         { key: 'estadisticas', icon: 'fa-chart-pie', label: 'Estadísticas' },
@@ -192,7 +185,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
             </main>
 
             {/* ============ MOBILE FLOATING BOTTOM NAV ============ */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 no-print pointer-events-none">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 no-print pointer-events-none pb-6 px-4">
                 {/* "More" Popup (appears above the nav bar) */}
                 {isMobileMoreOpen && (
                     <>
@@ -202,7 +195,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
                             onClick={() => setIsMobileMoreOpen(false)}
                         />
                         <div
-                            className="relative z-50 mx-4 mb-2 pointer-events-auto rounded-[1.5rem] p-3 shadow-2xl"
+                            className="relative z-50 mb-4 pointer-events-auto rounded-[1.5rem] p-3 shadow-2xl"
                             style={{
                                 background: 'rgba(255,255,255,0.75)',
                                 backdropFilter: 'blur(30px)',
@@ -216,9 +209,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
                                         key={item.key}
                                         onClick={() => handleMobileNav(item.key)}
                                         className={`flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl transition-all duration-200 active:scale-90 ${activeTab === item.key
-                                            ? 'bg-indigo-500/10 text-indigo-600'
-                                            : 'text-gray-500 hover:bg-white/50'
+                                            ? 'bg-opacity-10'
+                                            : 'text-slate-500 hover:bg-white/50'
                                             }`}
+                                        style={activeTab === item.key ? { color: settings.primaryColor || '#ee2b9d', backgroundColor: `${settings.primaryColor || '#ee2b9d'}1A` } : {}}
                                     >
                                         <i className={`fas ${item.icon} text-lg`}></i>
                                         <span className="text-[10px] font-bold uppercase tracking-tight leading-none">{item.label}</span>
@@ -239,52 +233,63 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange, setti
                     </>
                 )}
 
-                {/* Floating pill navigation bar */}
-                <div className="px-4 pb-5 pt-1 pointer-events-auto">
-                    <div
-                        className="flex items-center justify-around rounded-full px-2 py-2 shadow-2xl"
-                        style={{
-                            background: 'rgba(255,255,255,0.65)',
-                            backdropFilter: 'blur(28px)',
-                            WebkitBackdropFilter: 'blur(28px)',
-                            border: '1px solid rgba(255,255,255,0.7)',
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
-                        }}
+                {/* Navigation Bar - New Liquid Glass Edition */}
+                <nav className="pointer-events-auto flex h-20 items-center justify-around rounded-full px-2 shadow-2xl"
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.4)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
+                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                    }}>
+                    <button
+                        onClick={() => { onTabChange('dashboard'); setIsMobileMoreOpen(false); }}
+                        className={`flex flex-col items-center justify-center gap-1 w-16 transition-colors ${activeTab !== 'dashboard' ? 'text-slate-700' : ''}`}
+                        style={activeTab === 'dashboard' ? { color: settings.primaryColor || '#ee2b9d' } : {}}
                     >
-                        {mobileNavItems.map(item => {
-                            const isActive = activeTab === item.key;
-                            return (
-                                <button
-                                    key={item.key}
-                                    onClick={() => { onTabChange(item.key); setIsMobileMoreOpen(false); }}
-                                    className={`flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-2xl transition-all duration-200 active:scale-90 ${isActive
-                                        ? 'bg-indigo-500/15 text-indigo-600 scale-105'
-                                        : 'text-gray-400 hover:text-gray-600'
-                                        }`}
-                                >
-                                    <i className={`fas ${item.icon} text-[18px] ${isActive ? 'drop-shadow-sm' : ''}`}></i>
-                                    <span className={`text-[9px] font-bold uppercase tracking-tighter leading-none mt-0.5 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
-                                        {item.label}
-                                    </span>
-                                </button>
-                            );
-                        })}
+                        <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'dashboard' ? "'FILL' 1" : "'FILL' 0" }}>home</span>
+                        <span className="text-[10px] font-bold uppercase">Inicio</span>
+                    </button>
 
-                        {/* More / Más button */}
+                    <button
+                        onClick={() => { onTabChange('historial'); setIsMobileMoreOpen(false); }}
+                        className={`flex flex-col items-center justify-center gap-1 w-16 transition-colors ${activeTab !== 'historial' ? 'text-slate-700' : ''}`}
+                        style={activeTab === 'historial' ? { color: settings.primaryColor || '#ee2b9d' } : {}}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'historial' ? "'FILL' 1" : "'FILL' 0" }}>history</span>
+                        <span className="text-[10px] font-bold uppercase">Historial</span>
+                    </button>
+
+                    <div className="relative -top-8 mx-1">
                         <button
-                            onClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
-                            className={`flex flex-col items-center justify-center gap-0.5 py-2 px-3 rounded-2xl transition-all duration-200 active:scale-90 ${isMobileMoreOpen || isMoreActive
-                                ? 'bg-indigo-500/15 text-indigo-600 scale-105'
-                                : 'text-gray-400 hover:text-gray-600'
-                                }`}
+                            onClick={() => { onTabChange('cotizador'); setIsMobileMoreOpen(false); }}
+                            className="flex h-16 w-16 items-center justify-center rounded-full text-white shadow-xl ring-4 ring-white/30 transition-transform active:scale-95"
+                            style={{
+                                backgroundColor: settings.primaryColor || '#ee2b9d',
+                                boxShadow: `0 20px 25px -5px ${settings.primaryColor || '#ee2b9d'}66, 0 8px 10px -6px ${settings.primaryColor || '#ee2b9d'}66`
+                            }}
                         >
-                            <i className={`fas ${isMobileMoreOpen ? 'fa-times' : 'fa-ellipsis-h'} text-[18px]`}></i>
-                            <span className={`text-[9px] font-bold uppercase tracking-tighter leading-none mt-0.5 ${isMobileMoreOpen || isMoreActive ? 'opacity-100' : 'opacity-70'}`}>
-                                Más
-                            </span>
+                            <span className="material-symbols-outlined text-3xl">add</span>
                         </button>
                     </div>
-                </div>
+
+                    <button
+                        onClick={() => { onTabChange('clientes'); setIsMobileMoreOpen(false); }}
+                        className={`flex flex-col items-center justify-center gap-1 w-16 transition-colors ${activeTab !== 'clientes' ? 'text-slate-700' : ''}`}
+                        style={activeTab === 'clientes' ? { color: settings.primaryColor || '#ee2b9d' } : {}}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'clientes' ? "'FILL' 1" : "'FILL' 0" }}>group</span>
+                        <span className="text-[10px] font-bold uppercase">Clientes</span>
+                    </button>
+
+                    <button
+                        onClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
+                        className={`flex flex-col items-center justify-center gap-1 w-16 transition-colors ${!(isMobileMoreOpen || isMoreActive) ? 'text-slate-700' : ''}`}
+                        style={isMobileMoreOpen || isMoreActive ? { color: settings.primaryColor || '#ee2b9d' } : {}}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontVariationSettings: isMobileMoreOpen || isMoreActive ? "'FILL' 1" : "'FILL' 0" }}>settings</span>
+                        <span className="text-[10px] font-bold uppercase">Ajustes</span>
+                    </button>
+                </nav>
             </div>
         </div>
     );
