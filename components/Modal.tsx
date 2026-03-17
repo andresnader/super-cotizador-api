@@ -12,8 +12,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, maxWidth = 'ma
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-75 p-4 transition-opacity print:absolute print:inset-0 print:bg-white print:p-0">
-            <div className={`relative bg-white rounded-xl shadow-xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto transform transition-all modal-content-print-fix`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/75 p-4 transition-opacity print:absolute print:inset-0 print:bg-white print:p-0">
+            {/* Added relative and max-h-full to ensure it respects viewport height */}
+            <div className={`relative bg-white rounded-xl shadow-xl w-full ${maxWidth} max-h-[90vh] md:max-h-[85vh] overflow-y-auto transform transition-all modal-content-print-fix my-auto`}>
                 {!hideCloseButton && (
                     <button
                         onClick={onClose}
