@@ -1,15 +1,19 @@
-FROM node:20-alpine
+FROM node:20-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm install
 
-COPY prisma ./prisma
+COPY backend/prisma ./prisma
 RUN npx prisma generate
 
-COPY . .
+COPY backend/src ./src
+COPY backend/tsconfig.json ./
+
 RUN npm run build
 
 EXPOSE 3000
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/src/server.js"]
