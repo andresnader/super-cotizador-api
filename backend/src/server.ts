@@ -7,6 +7,7 @@ import serviceRoutes from './routes/services.js';
 import quoteRoutes from './routes/quotes.js';
 import contractRoutes from './routes/contracts.js';
 import settingsRoutes from './routes/settings.js';
+import importRoutes from './routes/import.js';
 import { authMiddleware } from './middleware/auth.js';
 
 export const prisma = new PrismaClient();
@@ -27,6 +28,7 @@ fastify.register(async (app) => {
   app.register(quoteRoutes, { prefix: '/api/quotes' });
   app.register(contractRoutes, { prefix: '/api/contracts' });
   app.register(settingsRoutes, { prefix: '/api/settings' });
+  app.register(importRoutes, { prefix: '/api/import' });
 });
 
 const start = async () => {
