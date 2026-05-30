@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clients    Client[]
+  services   Service[]
+  quotes     Quote[]
+  contracts  RecurringContract[]
+  settings   CompanySettings?
+}
+
+model Client {
+  id      String @id @default(cuid())
+  code    String
+  name    String
+  ruc     String
+  contact String?
+  phone   String?
+  address String?
+  city    String?
+
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotes   Quote[]
+  contracts RecurringContract[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Service {
+  id          String @id @default(cuid())
+  code        String
+  name        String
+  description String?
+  price       Decimal @db.Decimal(10, 2)
+  cost        Decimal @db.Decimal(10, 2) @default(0)
+  category    String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Quote {
+  id           String   @id @default(cuid())
+  number       String   @unique
+  issueDate    String
+  validityDate String
+  subtotal     Decimal  @db.Decimal(12, 2)
+  iva          Decimal  @db.Decimal(12, 2)
+  total        Decimal  @db.Decimal(12, 2)
+  notes        String?
+  status       QuoteStatus @default(PENDIENTE)
+  pdfUrl       String?
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items QuoteItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum QuoteStatus {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+}
+
+model QuoteItem {
+  id          String  @id @default(cuid())
+  name        String
+  code        String
+  description String?
+  price       Decimal @db.Decimal(10, 2)
+  quantity    Int     @default(1)
+  category    String?
+  cost        Decimal @db.Decimal(10, 2) @default(0)
+
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([quoteId])
+}
+
+model RecurringContract {
+  id              String         @id @default(cuid())
+  serviceType     ContractType
+  serviceName     String
+  description     String?
+  provider        String?
+  amount          Decimal        @db.Decimal(10, 2)
+  period          ContractPeriod
+  startDate       String
+  nextRenewalDate String
+  status          ContractStatus @default(ACTIVE)
+  autoRenew       Boolean        @default(true)
+  notes           String?
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum ContractType {
+  HOSTING
+  DOMAIN
+  MAINTENANCE
+  OTHER
+}
+
+enum ContractPeriod {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+}
+
+enum ContractStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+model CompanySettings {
+  id           String  @id @default(cuid())
+  name         String  @default("Tu Empresa S.A.")
+  address      String?
+  contact      String?
+  ruc          String?
+  repName      String?
+  repTitle     String?
+  logo         String?
+  primaryColor String  @default("#1a202c")
+  accentColor  String  @default("#4f46e5")
+  website      String?
+  whatsapp     String?
+  typography   String  @default("Inter, sans-serif")
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+}
