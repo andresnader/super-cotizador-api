@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../server.js';
-import { signToken } from '../middleware/auth.js';
+import { signToken, authMiddleware } from '../middleware/auth.js';
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -54,7 +54,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     return { token, user: { id: user.id, email: user.email, name: user.name } };
   });
 
-  fastify.get('/me', async (req, reply) => {
+  fastify.get('/me', { onRequest: authMiddleware }, async (req, reply) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId },
       select: { id: true, email: true, name: true },
