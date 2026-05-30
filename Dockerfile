@@ -8,7 +8,7 @@ COPY backend/package*.json ./
 RUN npm install
 
 COPY backend/prisma ./prisma
-RUN npx prisma generate
+RUN npx prisma generate && npx prisma db push --accept-data-loss
 
 COPY backend/src ./src
 COPY backend/tsconfig.json ./
