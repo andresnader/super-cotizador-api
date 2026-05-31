@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import { PrismaClient } from '@prisma/client';
+import { ZodError } from 'zod';
 import authRoutes from './routes/auth.js';
 import clientRoutes from './routes/clients.js';
 import serviceRoutes from './routes/services.js';
@@ -19,6 +21,23 @@ const fastify = Fastify({ logger: true, bodyLimit: 52_428_800 });
 await fastify.register(cors, {
   origin: true,
   credentials: true,
+});
+
+// Rate limiting: solo aplica en rutas que declaran config.rateLimit (global: false).
+await fastify.register(rateLimit, { global: false });
+
+// Manejador de errores: ZodError → 400 con mensaje claro; resto → status apropiado.
+fastify.setErrorHandler((error, req, reply) => {
+  if (error instanceof ZodError) {
+    const msg = error.errors.map((e) => e.message).join('; ') || 'Datos inválidos';
+    return reply.status(400).send({ error: msg });
+  }
+  const statusCode = (error as { statusCode?: number }).statusCode;
+  const status = typeof statusCode === 'number' && statusCode >= 400 ? statusCode : 500;
+  if (status >= 500) req.log.error(error);
+  return reply.status(status).send({
+    error: status >= 500 ? 'Error interno del servidor' : error.message,
+  });
 });
 
 fastify.register(authRoutes, { prefix: '/api/auth' });
