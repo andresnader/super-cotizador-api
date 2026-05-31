@@ -12,7 +12,9 @@ import { authMiddleware } from './middleware/auth.js';
 
 export const prisma = new PrismaClient();
 
-const fastify = Fastify({ logger: true });
+// bodyLimit alto (50 MB): el respaldo JSON puede incluir el logo en base64 y
+// muchos registros, superando el default de Fastify (1 MB → 413 Content Too Large).
+const fastify = Fastify({ logger: true, bodyLimit: 52_428_800 });
 
 await fastify.register(cors, {
   origin: true,
