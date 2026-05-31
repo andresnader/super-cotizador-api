@@ -14,7 +14,12 @@ declare module 'fastify' {
   }
 }
 
-export function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
+// IMPORTANTE: debe ser async. Como hook onRequest de Fastify, una función
+// síncrona de aridad < 3 que no llama a done() ni devuelve una promesa deja la
+// petición colgada en el camino de éxito (Fastify queda esperando una señal que
+// nunca llega). Al ser async siempre devuelve promesa → Fastify la await-ea y
+// continúa hacia el handler.
+export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return reply.status(401).send({ error: 'No token provided' });
