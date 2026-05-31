@@ -16,7 +16,10 @@ export const prisma = new PrismaClient();
 
 // bodyLimit alto (50 MB): el respaldo JSON puede incluir el logo en base64 y
 // muchos registros, superando el default de Fastify (1 MB → 413 Content Too Large).
-const fastify = Fastify({ logger: true, bodyLimit: 52_428_800 });
+// trustProxy: Railway enruta detrás de un proxy con IPs de origen rotativas
+// (100.64.x.x). Sin esto, req.ip cambia por request y el rate limit nunca acumula;
+// con trustProxy Fastify usa la IP real del cliente desde X-Forwarded-For.
+const fastify = Fastify({ logger: true, bodyLimit: 52_428_800, trustProxy: true });
 
 await fastify.register(cors, {
   origin: true,
